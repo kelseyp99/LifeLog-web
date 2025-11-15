@@ -38,12 +38,14 @@ function App() {
 
   return (
     <>
-      <header style={{ position: 'relative', left: 0, top: 0, width: '100vw', minWidth: '100%', background: '#f5f5f5', padding: '24px 0 12px 0', marginBottom: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: 8, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
-        <h1 style={{ textAlign: 'center', fontFamily: 'sans-serif', margin: 0, fontSize: '2.5rem', letterSpacing: '0.05em' }}>
+      <header style={{ width: '100vw', minWidth: '100%', background: '#f5f5f5', padding: '0 0 0 0', marginBottom: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 80, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingLeft: 32 }}>
+          <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+        </div>
+        <h1 style={{ flex: 1, textAlign: 'center', fontFamily: 'sans-serif', margin: 0, fontSize: '2.2rem', letterSpacing: '0.05em', fontWeight: 700, color: '#2d3748' }}>
           The LifeLog
         </h1>
-        <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingRight: 32 }}>
           {!user ? (
             <button onClick={handleSignIn} style={{ padding: '8px 24px', fontSize: 16, borderRadius: 8, background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
               Sign in with Google
@@ -58,42 +60,56 @@ function App() {
               </button>
             </>
           )}
-          {error && <div style={{ color: 'salmon', marginTop: 8 }}>{error}</div>}
+          {error && <div style={{ color: 'salmon', marginLeft: 12 }}>{error}</div>}
         </div>
       </header>
-      <nav style={{ width: '100vw', minWidth: '100%', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
-        <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
-        <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>ActivityLog</button>
-        <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
-        <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Dietitians</button>
-  <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
-      </nav>
-  {page === 'dietitians' && <DietitianList />}
-  {page === 'discussions' && <Discussions user={user} />}
-  {page === 'activitylog' && <ActivityLog user={user} />}
-  {page === 'categories' && <Categories user={user} />}
-  {page === 'profile' && <Profile user={user} />}
-  {page !== 'dietitians' && page !== 'discussions' && page !== 'activitylog' && page !== 'categories' && page !== 'profile' && (
-        <>
-          <div>
-            <a href="https://vite.dev" target="_blank">
-              <img src={viteLogo} className="logo" alt="Vite logo" />
-            </a>
-            <a href="https://react.dev" target="_blank">
-              <img src={reactLogo} className="logo react" alt="React logo" />
-            </a>
+      <div style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: '#f7fafc' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <nav style={{ width: '100vw', minWidth: '100%', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
+            <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
+            <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>ActivityLog</button>
+            <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
+            <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Dietitians</button>
+            <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
+          </nav>
+          {page === 'dietitians' && <DietitianList />}
+          {page === 'discussions' && <Discussions user={user} />}
+          {page === 'activitylog' && <ActivityLog user={user} />}
+          {page === 'categories' && <Categories user={user} />}
+          {page === 'profile' && <Profile user={user} />}
+          {page !== 'dietitians' && page !== 'discussions' && page !== 'activitylog' && page !== 'categories' && page !== 'profile' && (
+            <>
+              <div>
+                <a href="https://vite.dev" target="_blank">
+                  <img src={viteLogo} className="logo" alt="Vite logo" />
+                </a>
+                <a href="https://react.dev" target="_blank">
+                  <img src={reactLogo} className="logo react" alt="React logo" />
+                </a>
+              </div>
+              <h1>Vite + React</h1>
+              <div className="card">
+                <button onClick={() => setCount((count) => count + 1)}>
+                  count is {count}
+                </button>
+              </div>
+              <p className="read-the-docs">
+                Click on the Vite and React logos to learn more
+              </p>
+            </>
+          )}
+        </div>
+        <div style={{ width: 220, minWidth: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 8px 0 8px', gap: 24 }}>
+          {/* AdSense Placeholder 1 */}
+          <div style={{ width: 180, height: 150, background: '#e2e8f0', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096', fontWeight: 600, fontSize: 16, marginBottom: 12 }}>
+            AdSense Placeholder 1
           </div>
-          <h1>Vite + React</h1>
-          <div className="card">
-            <button onClick={() => setCount((count) => count + 1)}>
-              count is {count}
-            </button>
+          {/* AdSense Placeholder 2 */}
+          <div style={{ width: 180, height: 150, background: '#e2e8f0', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096', fontWeight: 600, fontSize: 16 }}>
+            AdSense Placeholder 2
           </div>
-          <p className="read-the-docs">
-            Click on the Vite and React logos to learn more
-          </p>
-        </>
-      )}
+        </div>
+      </div>
     </>
   )
 }
