@@ -5,6 +5,7 @@ import { signInWithPopup, signOut } from 'firebase/auth'
 import DietitianList from './DietitianList'
 import { Discussions } from './Discussions';
 import { ActivityLog } from './ActivityLog';
+import { Categories } from './Categories';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -59,13 +60,15 @@ function App() {
       <nav style={{ width: '100vw', minWidth: '100%', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
         <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
         <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>ActivityLog</button>
+        <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
         <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Dietitians</button>
         <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
       </nav>
   {page === 'dietitians' && <DietitianList />}
   {page === 'discussions' && <Discussions user={user} />}
   {page === 'activitylog' && <ActivityLog user={user} />}
-  {page !== 'dietitians' && page !== 'discussions' && page !== 'activitylog' && (
+  {page === 'categories' && <Categories user={user} />}
+  {page !== 'dietitians' && page !== 'discussions' && page !== 'activitylog' && page !== 'categories' && (
         <>
           <div>
             <a href="https://vite.dev" target="_blank">
