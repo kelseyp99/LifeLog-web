@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth'
 import { auth, provider } from './firebaseConfig'
 import { signInWithPopup, signOut } from 'firebase/auth'
 import DietitianList from './DietitianList'
+import { Discussions } from './Discussions';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -61,9 +62,9 @@ function App() {
         <button onClick={() => setPage('services')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Services</button>
         <button onClick={() => setPage('test')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Test</button>
       </nav>
-      {page === 'dietitians' ? (
-        <DietitianList />
-      ) : (
+  {page === 'dietitians' && <DietitianList />}
+  {page === 'discussions' && <Discussions user={user} />}
+      {page !== 'dietitians' && page !== 'discussions' && (
         <>
           <div>
             <a href="https://vite.dev" target="_blank">

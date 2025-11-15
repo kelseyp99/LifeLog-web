@@ -1,0 +1,74 @@
+[
+  {
+    "primaryKey": "1",
+    "entityType": "folio",
+    "paymentMethod": "undefined",
+    "tests": [
+      {
+        "testName": "Backup Documentation",
+        "result": "Pass",
+        "description": "Backup documentation is referenced and present on pages 3–9."
+      },
+      {
+        "testName": "Credit Card Payment Present",
+        "result": "Fail",
+        "description": "Payment method is not specified; credit card documentation is missing."
+      },
+      {
+        "testName": "DR-14 Certificate Present",
+        "result": "Pass",
+        "description": "DR-14 certificate is referenced within the supporting pages (3–9)."
+      }
+    ],
+    "approval": "Denied",
+    "justification": "Exemption denied due to missing payment method documentation. DR-14 certificate is present, but payment method documentation is required under Rule 12A-1.061, F.A.C. and Section 125.0104, Florida Statutes."
+  },
+  {
+    "primaryKey": "4",
+    "entityType": "folio",
+    "paymentMethod": "undefined",
+    "tests": [
+      {
+        "testName": "Backup Documentation",
+        "result": "Pass",
+        "description": "Backup documentation is referenced and present on pages 11–20."
+      },
+      {
+        "testName": "Credit Card Payment Present",
+        "result": "Fail",
+        "description": "Payment method is not specified; credit card documentation is missing."
+      },
+      {
+        "testName": "DR-14 Certificate Present",
+        "result": "Fail",
+        "description": "DR-14 certificate is not referenced or found within the supporting pages (11–20)."
+      }
+    ],
+    "approval": "Denied",
+    "justification": "Exemption denied due to missing payment method documentation and lack of DR-14 certificate. Does not meet requirements of Rule 12A-1.061, F.A.C. and Section 125.0104, Florida Statutes."
+  },
+  {
+    "primaryKey": "TRIAL",
+    "entityType": "folio",
+    "paymentMethod": "undefined",
+    "tests": [
+      {
+        "testName": "Backup Documentation",
+        "result": "Pass",
+        "description": "Backup documentation is referenced and present on pages 11–20."
+      },
+      {
+        "testName": "Credit Card Payment Present",
+        "result": "Fail",
+        "description": "Payment method is not specified; credit card documentation is missing."
+      },
+      {
+        "testName": "DR-14 Certificate Present",
+        "result": "Fail",
+        "description": "DR-14 certificate is not referenced or found within the supporting pages (11–20)."
+      }
+    ],
+    "approval": "Denied",
+    "justification": "Exemption denied due to missing payment method documentation and lack of DR-14 certificate. Does not meet requirements of Rule 12A-1.061, F.A.C. and Section 125.0104, Florida Statutes."
+  }
+]
