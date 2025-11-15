@@ -9,6 +9,7 @@ import { Categories } from './Categories';
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import lifeLinkLog from './assets/LifeLinkLog.png';
 
 
 function App() {
@@ -36,7 +37,8 @@ function App() {
 
   return (
     <>
-      <header style={{ position: 'relative', left: 0, top: 0, width: '100vw', minWidth: '100%', background: '#f5f5f5', padding: '24px 0', marginBottom: 0, boxSizing: 'border-box' }}>
+      <header style={{ position: 'relative', left: 0, top: 0, width: '100vw', minWidth: '100%', background: '#f5f5f5', padding: '24px 0 12px 0', marginBottom: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 64, height: 64, objectFit: 'contain', marginBottom: 8, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
         <h1 style={{ textAlign: 'center', fontFamily: 'sans-serif', margin: 0, fontSize: '2.5rem', letterSpacing: '0.05em' }}>
           The LifeLog
         </h1>
