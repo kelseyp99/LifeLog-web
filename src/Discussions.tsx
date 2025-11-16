@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { db } from './firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 
@@ -24,6 +24,75 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   const [loading, setLoading] = useState(false);
   const [sortKey, setSortKey] = useState<string>('');
   const [sortAsc, setSortAsc] = useState<boolean>(true);
+  const [form, setForm] = useState<Partial<DiscussionRow>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string>('');
+  // Handle form input changes
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Add new discussion
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    if (!user) return;
+    try {
+      const newDoc = {
+        description: form.description || '',
+        timestamp: new Date(),
+        typeSay: form.typeSay || '',
+        cleared: form.cleared || '',
+        activityLogs: [],
+      };
+      await addDoc(collection(db, `Users/${user.uid}/Discussion`), newDoc);
+      setForm({});
+      fetchDiscussions();
+    } catch (err) {
+      setFormError('Failed to add discussion.');
+    }
+  };
+
+  // Start editing a discussion
+  const handleEdit = (row: DiscussionRow) => {
+    setEditingId(row.id);
+    setForm({ ...row });
+  };
+
+  // Save edited discussion
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    if (!user || !editingId) return;
+    try {
+      const ref = doc(db, `Users/${user.uid}/Discussion`, editingId);
+      const updatedDoc = {
+        description: form.description || '',
+        typeSay: form.typeSay || '',
+        cleared: form.cleared || '',
+        // Don't update timestamp or activityLogs here
+      };
+      await updateDoc(ref, updatedDoc);
+      setEditingId(null);
+      setForm({});
+      fetchDiscussions();
+    } catch (err) {
+      setFormError('Failed to update discussion.');
+    }
+  };
+
+  // Delete a discussion
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+    if (!window.confirm('Delete this discussion?')) return;
+    try {
+      await deleteDoc(doc(db, `Users/${user.uid}/Discussion`, id));
+      fetchDiscussions();
+    } catch (err) {
+      alert('Failed to delete discussion.');
+    }
+  };
 
   const fetchDiscussions = async () => {
     if (!user) {
@@ -100,6 +169,42 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Discussions Table</h2>
       {!user && <div style={{ color: 'salmon', marginBottom: 12 }}>Please sign in to view your discussions.</div>}
+      {formError && <div style={{ color: 'red', marginBottom: 8 }}>{formError}</div>}
+      {/* Add/Edit Form */}
+      {user && (
+        <form onSubmit={editingId ? handleUpdate : handleAdd} style={{ display: 'flex', gap: 12, marginBottom: 18, alignItems: 'center', flexWrap: 'wrap', background: '#f7fafc', padding: 12, borderRadius: 8 }}>
+          <input
+            name="description"
+            placeholder="Description"
+            value={form.description || ''}
+            onChange={handleFormChange}
+            style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', minWidth: 120 }}
+            required
+          />
+          <input
+            name="typeSay"
+            placeholder="TypeSay"
+            value={form.typeSay || ''}
+            onChange={handleFormChange}
+            style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', minWidth: 90 }}
+          />
+          <input
+            name="cleared"
+            placeholder="Cleared"
+            value={form.cleared || ''}
+            onChange={handleFormChange}
+            style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', minWidth: 70 }}
+          />
+          <button type="submit" style={{ padding: '6px 16px', borderRadius: 4, background: '#3182ce', color: '#fff', border: 'none', fontWeight: 600 }}>
+            {editingId ? 'Update' : 'Add'}
+          </button>
+          {editingId && (
+            <button type="button" onClick={() => { setEditingId(null); setForm({}); }} style={{ padding: '6px 12px', borderRadius: 4, background: '#a0aec0', color: '#fff', border: 'none', fontWeight: 600 }}>
+              Cancel
+            </button>
+          )}
+        </form>
+      )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
       <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 600, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 600, width: '100%' }}>
@@ -115,6 +220,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
                   {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
                 </th>
               ))}
+              <th style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -137,11 +243,15 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
                     }
                     return <td key={key} style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>{String(value ?? '')}</td>;
                   })}
+                  <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
+                    <button onClick={() => handleEdit(discussion)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                    <button onClick={() => handleDelete(discussion.id)} style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: '#e53e3e', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={backupFields.length} style={{ textAlign: 'center', padding: 24, color: '#a0aec0', fontSize: 16 }}>
+                <td colSpan={backupFields.length + 1} style={{ textAlign: 'center', padding: 24, color: '#a0aec0', fontSize: 16 }}>
                   No discussions found. Check your Firestore collection or add sample data.
                 </td>
               </tr>
