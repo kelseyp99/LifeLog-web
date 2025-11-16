@@ -247,35 +247,39 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
         </form>
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
-      <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 900, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 900, width: '100%' }}>
+      <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 700, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 700, width: '100%' }}>
           <thead>
             <tr style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>
               {backupFields.map((key) => {
                 // Get unique values for dropdown
                 let uniqueValues: string[] = [];
-                if (['description', 'typeSay', 'cleared'].includes(key)) {
-                  uniqueValues = Array.from(new Set(discussions.map(row => String(row[key] ?? '')))).filter(v => v !== '');
-                } else if (key === 'activityLogs') {
-                  uniqueValues = Array.from(new Set(discussions.map(row => Array.isArray(row[key]) ? String(row[key].length) : '0')));
+                if (["typeSay", "cleared"].includes(key)) {
+                  uniqueValues = Array.from(new Set(discussions.map(row => String(row[key] ?? "")))).filter(v => v !== "");
+                } else if (key === "activityLogs") {
+                  uniqueValues = Array.from(new Set(discussions.map(row => Array.isArray(row[key]) ? String(row[key].length) : "0")));
                 }
+                // Custom header label for typeSay
+                let headerLabel = key;
+                if (key === "typeSay") headerLabel = "Type";
+                else headerLabel = key.charAt(0).toUpperCase() + key.slice(1);
                 return (
                   <th
                     key={key}
-                    style={{ cursor: 'pointer', padding: '8px 10px', minWidth: 80, maxWidth: 180, fontWeight: 600, color: '#4a5568', fontSize: 15, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none', background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    style={{ cursor: "pointer", padding: "8px 10px", minWidth: 80, maxWidth: 180, fontWeight: 600, color: "#4a5568", fontSize: 15, borderBottom: "2px solid #e2e8f0", textAlign: "center", letterSpacing: "0.02em", userSelect: "none", background: "#f7fafc", position: "sticky", top: 0, zIndex: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
                     onClick={() => handleSort(key)}
                   >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                       <span>
-                        {key.charAt(0).toUpperCase() + key.slice(1)}
-                        {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
+                        {headerLabel}
+                        {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
                       </span>
                       {uniqueValues.length > 0 && (
                         <select
-                          value={columnFilters[key] || '__ALL__'}
+                          value={columnFilters[key] || "__ALL__"}
                           onClick={e => e.stopPropagation()}
                           onChange={e => setColumnFilters(f => ({ ...f, [key]: e.target.value }))}
-                          style={{ marginTop: 4, padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }}
+                          style={{ marginTop: 4, padding: 2, borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 13 }}
                         >
                           <option value="__ALL__">All</option>
                           {uniqueValues.map(val => (
