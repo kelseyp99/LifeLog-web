@@ -14,6 +14,8 @@ interface ActivityLogProps {
 }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
+  // Per-column filters
+  const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
   const [activityLogs, setActivityLogs] = useState<ActivityLogRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [sortKey, setSortKey] = useState<string>('');
@@ -141,6 +143,17 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
     return sorted;
   }, [activityLogs, sortKey, sortAsc]);
 
+  // Per-column dropdown filtering
+  const filteredActivityLogs = React.useMemo(() => {
+    let filtered = sortedActivityLogs;
+    Object.entries(columnFilters).forEach(([key, value]) => {
+      if (value && value !== '__ALL__') {
+        filtered = filtered.filter((row: ActivityLogRow) => String(row[key] ?? '') === value);
+      }
+    });
+    return filtered;
+  }, [sortedActivityLogs, columnFilters]);
+
   const handleSort = (key: string) => {
     if (sortKey === key) {
       setSortAsc((asc) => !asc);
@@ -160,7 +173,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Activity Log Table</h2>
       {!user && <div style={{ color: 'salmon', marginBottom: 12 }}>Please sign in to view your Activity Log.</div>}
       {formError && <div style={{ color: 'red', marginBottom: 8 }}>{formError}</div>}
@@ -212,22 +225,43 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 520, width: '100%' }}>
           <thead>
             <tr style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>
-              {backupFields.map((key) => (
-                <th
-                  key={key}
-                  style={{ cursor: 'pointer', padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none', background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}
-                  onClick={() => handleSort(key)}
-                >
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                  {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
-                </th>
-              ))}
+              {backupFields.map((key) => {
+                // Get unique values for dropdown
+                let uniqueValues: string[] = Array.from(new Set(activityLogs.map(row => String(row[key] ?? '')))).filter(v => v !== '');
+                return (
+                  <th
+                    key={key}
+                    style={{ cursor: 'pointer', padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none', background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}
+                    onClick={() => handleSort(key)}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span>
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                        {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
+                      </span>
+                      {uniqueValues.length > 0 && (
+                        <select
+                          value={columnFilters[key] || '__ALL__'}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => setColumnFilters(f => ({ ...f, [key]: e.target.value }))}
+                          style={{ marginTop: 4, padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }}
+                        >
+                          <option value="__ALL__">All</option>
+                          {uniqueValues.map(val => (
+                            <option key={val} value={val}>{val}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
               <th style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {sortedActivityLogs.length > 0 ? (
-              sortedActivityLogs.map((log, idx) => (
+            {filteredActivityLogs.length > 0 ? (
+              filteredActivityLogs.map((log, idx) => (
                 <tr key={log.id} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
                   {backupFields.map((key) => {
                     let value = log[key];
