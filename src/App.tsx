@@ -29,7 +29,6 @@ import AskAndLog from './AskAndLog';
 
 
 function App() {
-  const [count, setCount] = useState(0)
   const [page, setPage] = useState('home');
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +101,7 @@ function Home() {
             <button onClick={() => setPage('home')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Home</button>
             <button onClick={() => setPage('askandlog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Ask & Log</button>
             <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
-            <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>ActivityLog</button>
+            <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Activity Log</button>
             <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
             <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Dietitians</button>
             <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
