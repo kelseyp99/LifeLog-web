@@ -286,25 +286,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                   thStyle.minWidth = 90;
                   thStyle.maxWidth = 120;
                 }
-                // Remove filter dropdown for description column, but add for timestamp
-                let showDropdown = false;
-                let dropdownValues: string[] = [];
-                if (key === 'timestamp') {
-                  // Show dropdown for unique date strings (YYYY-MM-DD)
-                  dropdownValues = Array.from(new Set(activityLogs.map(row => {
-                    let ts = row.timestamp;
-                    if (ts && ts.toDate) ts = ts.toDate();
-                    if (typeof ts === 'string') ts = new Date(ts);
-                    if (ts instanceof Date && !isNaN(ts.getTime())) {
-                      return ts.toISOString().slice(0, 10);
-                    }
-                    return '';
-                  }))).filter(v => v !== '');
-                  showDropdown = dropdownValues.length > 0;
-                } else if (key !== 'description' && uniqueValues.length > 0) {
-                  showDropdown = true;
-                  dropdownValues = uniqueValues;
-                }
+                // Only show dropdown for non-description, non-timestamp columns
+                const showDropdown = key !== 'description' && key !== 'timestamp' && uniqueValues.length > 0;
                 return (
                   <th
                     key={key}
@@ -324,7 +307,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                           style={{ marginTop: 4, padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }}
                         >
                           <option value="__ALL__">All</option>
-                          {dropdownValues.map(val => (
+                          {uniqueValues.map(val => (
                             <option key={val} value={val}>{val}</option>
                           ))}
                         </select>
