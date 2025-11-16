@@ -30,6 +30,8 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   // const [filter, setFilter] = useState('');
   // Per-column filters
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+  // Timestamp AA filter
+  const [timestampAA, setTimestampAA] = useState<{ mode: 'ALL' | 'AFTER', date: string }>({ mode: 'ALL', date: '' });
 
   // ...existing code...
 
@@ -157,7 +159,16 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   // Filter discussions by text in any visible field and by column dropdowns
   const filteredDiscussions = React.useMemo(() => {
     let filtered = sortedDiscussions;
-  // Text filter removed
+    // Timestamp AA filter
+    if (timestampAA.mode === 'AFTER' && timestampAA.date) {
+      const afterDate = new Date(timestampAA.date);
+      filtered = filtered.filter((row: DiscussionRow) => {
+        let ts = row.timestamp;
+        if (ts && ts.toDate) ts = ts.toDate();
+        else if (typeof ts === 'string' || typeof ts === 'number') ts = new Date(ts);
+  return ts instanceof Date && !isNaN(ts.getTime()) && ts >= afterDate;
+      });
+    }
     // Apply column dropdown filters
     Object.entries(columnFilters).forEach(([key, value]) => {
       if (value && value !== '__ALL__') {
@@ -170,7 +181,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       }
     });
     return filtered;
-  }, [sortedDiscussions, columnFilters]);
+  }, [sortedDiscussions, columnFilters, timestampAA]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -232,6 +243,17 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
       <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 700, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
+        {/* Timestamp AA Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 4px 8px' }}>
+          <label style={{ fontWeight: 500, color: '#4a5568', fontSize: 14 }}>Timestamp:</label>
+          <select value={timestampAA.mode} onChange={e => setTimestampAA(a => ({ ...a, mode: e.target.value as 'ALL' | 'AFTER' }))} style={{ padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }}>
+            <option value="ALL">All</option>
+            <option value="AFTER">After</option>
+          </select>
+          {timestampAA.mode === 'AFTER' && (
+            <input type="date" value={timestampAA.date} onChange={e => setTimestampAA(a => ({ ...a, date: e.target.value }))} style={{ padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }} />
+          )}
+        </div>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 700, width: '100%' }}>
           <thead>
             <tr style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>
@@ -285,18 +307,30 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
                   {backupFields.map((key) => {
                     let value = discussion[key];
                     if (key === 'timestamp') {
+                      let dateStr = '';
+                      let timeStr = '';
                       if (value && value.toDate) {
-                        value = value.toDate().toLocaleString();
+                        const d = value.toDate();
+                        dateStr = d.toLocaleDateString();
+                        timeStr = d.toLocaleTimeString();
                       } else if (value instanceof Date) {
-                        value = value.toLocaleString();
-                      } else if (typeof value === 'string') {
-                        value = value;
+                        dateStr = value.toLocaleDateString();
+                        timeStr = value.toLocaleTimeString();
+                      } else if (typeof value === 'string' || typeof value === 'number') {
+                        const d = new Date(value);
+                        if (!isNaN(d.getTime())) {
+                          dateStr = d.toLocaleDateString();
+                          timeStr = d.toLocaleTimeString();
+                        } else {
+                          dateStr = String(value);
+                        }
                       }
+                      value = <span style={{ whiteSpace: 'pre-line' }}>{dateStr}{dateStr && timeStr ? '\n' : ''}{timeStr}</span>;
                     }
                     if (key === 'activityLogs' && Array.isArray(value)) {
                       value = value.length + ' logs';
                     }
-                    return <td key={key} style={{ padding: '6px 8px', minWidth: 80, maxWidth: 180, textAlign: 'center', color: '#2d3748', fontSize: 14, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(value ?? '')}</td>;
+                    return <td key={key} style={{ padding: '6px 8px', minWidth: 80, maxWidth: 180, textAlign: 'center', color: '#2d3748', fontSize: 14, borderBottom: '1px solid #e2e8f0', whiteSpace: 'pre-line', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value ?? ''}</td>;
                   })}
                   <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
                     <button onClick={() => handleEdit(discussion)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
