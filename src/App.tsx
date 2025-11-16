@@ -1,3 +1,19 @@
+function About() {
+  return (
+    <div style={{ padding: 32, textAlign: 'center' }}>
+      <h2>About <span style={{ fontWeight: 700 }}>Life<span style={{ fontStyle: 'italic', fontWeight: 400 }}>Log</span></span></h2>
+      <p style={{ fontSize: 18, maxWidth: 600, margin: '24px auto', color: '#444' }}>
+        LifeLog is designed to be your all-in-one digital journal and life management tool. Whether you want to track your daily activities, keep a record of important discussions, organize your categories, or manage your personal profile, LifeLog provides a simple and secure platform to do it all.
+      </p>
+      <p style={{ fontSize: 16, color: '#666', maxWidth: 600, margin: '0 auto' }}>
+        Our mission is to help you reflect, grow, and stay organized by making it easy to log your life events and access them anytime, anywhere. Your privacy and data security are our top priorities—everything you log is stored safely and is accessible only to you.
+      </p>
+      <p style={{ fontSize: 16, color: '#666', maxWidth: 600, margin: '24px auto 0 auto' }}>
+        LifeLog is continually evolving. We welcome your feedback and suggestions to make this platform even better for your personal growth and productivity journey.
+      </p>
+    </div>
+  );
+}
 import { useState, useEffect } from 'react'
 import type { User } from 'firebase/auth'
 import { auth, provider } from './firebaseConfig'
@@ -24,6 +40,19 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+function Home() {
+  return (
+    <div style={{ padding: 32, textAlign: 'center' }}>
+      <h2>Welcome to <span style={{ fontWeight: 700 }}>Life<span style={{ fontStyle: 'italic', fontWeight: 400 }}>Log</span></span></h2>
+      <p style={{ fontSize: 18, maxWidth: 520, margin: '24px auto', color: '#444' }}>
+        LifeLog is your personal digital journal for tracking activities, discussions, categories, and your profile. Effortlessly log your daily life, reflect on your progress, and stay organized—all in one place.
+      </p>
+      <p style={{ fontSize: 16, color: '#666' }}>
+        Use the menu above to navigate between your logs, discussions, and profile. Your data is securely stored and always accessible.
+      </p>
+    </div>
+  );
+}
   const handleSignIn = async () => {
     try {
       await signInWithPopup(auth, provider);
@@ -43,7 +72,7 @@ function App() {
           <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
         </div>
         <h1 style={{ flex: 1, textAlign: 'center', fontFamily: 'sans-serif', margin: 0, fontSize: '2.2rem', letterSpacing: '0.05em', fontWeight: 700, color: '#2d3748' }}>
-          The LifeLog
+          Life<span style={{ fontStyle: 'italic', fontWeight: 400 }}>Log</span>
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingRight: 32 }}>
           {!user ? (
@@ -66,38 +95,21 @@ function App() {
       <div style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: '#f7fafc', width: 1000, maxWidth: '100vw', margin: '0 auto' }}>
   <div style={{ flex: 1, minWidth: 0, maxWidth: 700 }}>
           <nav style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
+            <button onClick={() => setPage('home')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Home</button>
             <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
             <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>ActivityLog</button>
             <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
             <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Dietitians</button>
             <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
+            <button onClick={() => setPage('about')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>About</button>
           </nav>
+          {page === 'home' && <Home />}
+          {page === 'about' && <About />}
           {page === 'dietitians' && <DietitianList />}
           {page === 'discussions' && <Discussions user={user} />}
           {page === 'activitylog' && <ActivityLog user={user} />}
           {page === 'categories' && <Categories user={user} />}
           {page === 'profile' && <Profile user={user} />}
-          {page !== 'dietitians' && page !== 'discussions' && page !== 'activitylog' && page !== 'categories' && page !== 'profile' && (
-            <>
-              <div>
-                <a href="https://vite.dev" target="_blank">
-                  <img src={viteLogo} className="logo" alt="Vite logo" />
-                </a>
-                <a href="https://react.dev" target="_blank">
-                  <img src={reactLogo} className="logo react" alt="React logo" />
-                </a>
-              </div>
-              <h1>Vite + React</h1>
-              <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
-                  count is {count}
-                </button>
-              </div>
-              <p className="read-the-docs">
-                Click on the Vite and React logos to learn more
-              </p>
-            </>
-          )}
         </div>
   <div style={{ width: 220, minWidth: 180, maxWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 8px 0 8px', gap: 24, marginTop: 100, marginLeft: 120 }}>
           {/* AdSense Placeholder 1 */}
