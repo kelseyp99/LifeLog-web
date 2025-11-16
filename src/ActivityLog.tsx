@@ -257,7 +257,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
               {backupFields.map((key) => {
                 // Get unique values for dropdown
                 let uniqueValues: string[] = Array.from(new Set(activityLogs.map(row => String(row[key] ?? '')))).filter(v => v !== '');
-                // Compact all columns, set custom width for description
+                // Compact all columns, set custom width for description and timestamp
                 let thStyle: React.CSSProperties = {
                   cursor: 'pointer',
                   padding: '8px 10px',
@@ -281,6 +281,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                 if (key === 'description') {
                   thStyle.minWidth = 120;
                   thStyle.maxWidth = 220;
+                }
+                if (key === 'timestamp') {
+                  thStyle.minWidth = 90;
+                  thStyle.maxWidth = 120;
                 }
                 return (
                   <th
@@ -328,7 +332,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                         value = value;
                       }
                     }
-                    // Compact all columns, set custom width for description
+                    // Compact all columns, set custom width for description and timestamp
                     let tdStyle: React.CSSProperties = {
                       padding: '6px 8px',
                       textAlign: 'center',
@@ -344,6 +348,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                     if (key === 'description') {
                       tdStyle.minWidth = 120;
                       tdStyle.maxWidth = 220;
+                    }
+                    if (key === 'timestamp') {
+                      tdStyle.minWidth = 90;
+                      tdStyle.maxWidth = 120;
                     }
                     return <td key={key} style={tdStyle}>{String(value ?? '')}</td>;
                   })}
