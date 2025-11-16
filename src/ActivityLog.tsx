@@ -14,6 +14,8 @@ interface ActivityLogProps {
 }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
+  // Date range filter
+  const [dateRange, setDateRange] = useState<'ALL' | '1' | '10' | '30'>('ALL');
   // Per-column filters
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
   const [activityLogs, setActivityLogs] = useState<ActivityLogRow[]>([]);
@@ -146,13 +148,25 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   // Per-column dropdown filtering
   const filteredActivityLogs = React.useMemo(() => {
     let filtered = sortedActivityLogs;
+    // Date range filter
+    if (dateRange !== 'ALL') {
+      const now = new Date();
+      const days = parseInt(dateRange, 10);
+      const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter((row: ActivityLogRow) => {
+        let ts = row.timestamp;
+        if (ts && ts.toDate) ts = ts.toDate();
+        if (typeof ts === 'string') ts = new Date(ts);
+        return ts && ts >= cutoff;
+      });
+    }
     Object.entries(columnFilters).forEach(([key, value]) => {
       if (value && value !== '__ALL__') {
         filtered = filtered.filter((row: ActivityLogRow) => String(row[key] ?? '') === value);
       }
     });
     return filtered;
-  }, [sortedActivityLogs, columnFilters]);
+  }, [sortedActivityLogs, columnFilters, dateRange]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -221,6 +235,21 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         </form>
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
+      {/* Date Range Filter */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, width: '100%', maxWidth: 900, justifyContent: 'flex-end' }}>
+        <label htmlFor="dateRange" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>Show:</label>
+        <select
+          id="dateRange"
+          value={dateRange}
+          onChange={e => setDateRange(e.target.value as any)}
+          style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 15 }}
+        >
+          <option value="ALL">All</option>
+          <option value="1">Last 1 day</option>
+          <option value="10">Last 10 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+      </div>
       <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 700, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 700, width: '100%' }}>
           <thead>
