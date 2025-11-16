@@ -228,10 +228,33 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
               {backupFields.map((key) => {
                 // Get unique values for dropdown
                 let uniqueValues: string[] = Array.from(new Set(activityLogs.map(row => String(row[key] ?? '')))).filter(v => v !== '');
+                // Set custom width for description column
+                let thStyle: React.CSSProperties = {
+                  cursor: 'pointer',
+                  padding: '12px 24px',
+                  fontWeight: 600,
+                  color: '#4a5568',
+                  fontSize: 16,
+                  borderBottom: '2px solid #e2e8f0',
+                  textAlign: 'center',
+                  letterSpacing: '0.02em',
+                  userSelect: 'none',
+                  background: '#f7fafc',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 2
+                };
+                if (key === 'description') {
+                  thStyle.minWidth = 120;
+                  thStyle.maxWidth = 220;
+                  thStyle.whiteSpace = 'nowrap';
+                  thStyle.overflow = 'hidden';
+                  thStyle.textOverflow = 'ellipsis';
+                }
                 return (
                   <th
                     key={key}
-                    style={{ cursor: 'pointer', padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none', background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}
+                    style={thStyle}
                     onClick={() => handleSort(key)}
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -274,7 +297,22 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                         value = value;
                       }
                     }
-                    return <td key={key} style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>{String(value ?? '')}</td>;
+                    // Set custom width for description column
+                    let tdStyle: React.CSSProperties = {
+                      padding: '10px 20px',
+                      textAlign: 'center',
+                      color: '#2d3748',
+                      fontSize: 15,
+                      borderBottom: '1px solid #e2e8f0'
+                    };
+                    if (key === 'description') {
+                      tdStyle.minWidth = 120;
+                      tdStyle.maxWidth = 220;
+                      tdStyle.whiteSpace = 'nowrap';
+                      tdStyle.overflow = 'hidden';
+                      tdStyle.textOverflow = 'ellipsis';
+                    }
+                    return <td key={key} style={tdStyle}>{String(value ?? '')}</td>;
                   })}
                   <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
                     <button onClick={() => handleEdit(log)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
