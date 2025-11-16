@@ -27,7 +27,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   const [form, setForm] = useState<Partial<DiscussionRow>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string>('');
-  const [filter, setFilter] = useState('');
+  // const [filter, setFilter] = useState('');
   // Per-column filters
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
 
@@ -157,15 +157,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   // Filter discussions by text in any visible field and by column dropdowns
   const filteredDiscussions = React.useMemo(() => {
     let filtered = sortedDiscussions;
-    // Apply text filter
-    if (filter.trim()) {
-      const lower = filter.toLowerCase();
-      filtered = filtered.filter((row: DiscussionRow) =>
-        backupFields.some((key: string) =>
-          (row[key] !== undefined && row[key] !== null && String(row[key]).toLowerCase().includes(lower))
-        )
-      );
-    }
+  // Text filter removed
     // Apply column dropdown filters
     Object.entries(columnFilters).forEach(([key, value]) => {
       if (value && value !== '__ALL__') {
@@ -178,7 +170,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       }
     });
     return filtered;
-  }, [sortedDiscussions, filter, columnFilters]);
+  }, [sortedDiscussions, columnFilters]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -203,14 +195,6 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Discussions Table</h2>
       {!user && <div style={{ color: 'salmon', marginBottom: 12 }}>Please sign in to view your discussions.</div>}
       {formError && <div style={{ color: 'red', marginBottom: 8 }}>{formError}</div>}
-      {/* Filter Input */}
-      <input
-        type="text"
-        placeholder="Filter discussions..."
-        value={filter}
-        onChange={e => setFilter(e.target.value)}
-        style={{ marginBottom: 16, padding: 8, borderRadius: 6, border: '1px solid #cbd5e1', minWidth: 220 }}
-      />
       {/* Add/Edit Form */}
       {user && (
         <form onSubmit={editingId ? handleUpdate : handleAdd} style={{ display: 'flex', gap: 12, marginBottom: 18, alignItems: 'center', flexWrap: 'wrap', background: '#f7fafc', padding: 12, borderRadius: 8 }}>
