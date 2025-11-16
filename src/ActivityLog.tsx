@@ -15,7 +15,9 @@ interface ActivityLogProps {
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   // Date range filter
-  const [dateRange, setDateRange] = useState<'ALL' | '1' | '10' | '30'>('ALL');
+  const [dateRange, setDateRange] = useState<'ALL' | '1' | '30' | '180' | 'CUSTOM'>('ALL');
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
   // Per-column filters
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
   const [activityLogs, setActivityLogs] = useState<ActivityLogRow[]>([]);
@@ -150,14 +152,27 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
     let filtered = sortedActivityLogs;
     // Date range filter
     if (dateRange !== 'ALL') {
+      let start: Date | null = null;
+      let end: Date | null = null;
       const now = new Date();
-      const days = parseInt(dateRange, 10);
-      const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      if (dateRange === 'CUSTOM') {
+        if (customStart) start = new Date(customStart);
+        if (customEnd) {
+          end = new Date(customEnd);
+          end.setHours(23, 59, 59, 999); // include the whole end day
+        }
+      } else {
+        const days = parseInt(dateRange, 10);
+        start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      }
       filtered = filtered.filter((row: ActivityLogRow) => {
         let ts = row.timestamp;
         if (ts && ts.toDate) ts = ts.toDate();
         if (typeof ts === 'string') ts = new Date(ts);
-        return ts && ts >= cutoff;
+        if (!(ts instanceof Date) || isNaN(ts.getTime())) return false;
+        if (start && ts < start) return false;
+        if (end && ts > end) return false;
+        return true;
       });
     }
     Object.entries(columnFilters).forEach(([key, value]) => {
@@ -236,7 +251,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
       {/* Date Range Filter */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, width: '100%', maxWidth: 900, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, width: '100%', maxWidth: 900, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
         <label htmlFor="dateRange" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>Show:</label>
         <select
           id="dateRange"
@@ -246,9 +261,30 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         >
           <option value="ALL">All</option>
           <option value="1">Last 1 day</option>
-          <option value="10">Last 10 days</option>
           <option value="30">Last 30 days</option>
+          <option value="180">Last 6 months</option>
+          <option value="CUSTOM">Custom range...</option>
         </select>
+        {dateRange === 'CUSTOM' && (
+          <>
+            <label htmlFor="customStart" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>From:</label>
+            <input
+              id="customStart"
+              type="date"
+              value={customStart}
+              onChange={e => setCustomStart(e.target.value)}
+              style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 15 }}
+            />
+            <label htmlFor="customEnd" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>To:</label>
+            <input
+              id="customEnd"
+              type="date"
+              value={customEnd}
+              onChange={e => setCustomEnd(e.target.value)}
+              style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 15 }}
+            />
+          </>
+        )}
       </div>
       <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 700, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 700, width: '100%' }}>
@@ -323,40 +359,56 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
             {filteredActivityLogs.length > 0 ? (
               filteredActivityLogs.map((log, idx) => (
                 <tr key={log.id} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
-                  {backupFields.map((key) => {
-                    let value = log[key];
-                    if (key === 'timestamp') {
-                      if (value && value.toDate) {
-                        value = value.toDate().toLocaleString();
-                      } else if (value instanceof Date) {
-                        value = value.toLocaleString();
-                      } else if (typeof value === 'string') {
-                        value = value;
-                      }
-                    }
-                    // Compact all columns, set custom width for description and timestamp
-                    let tdStyle: React.CSSProperties = {
-                      padding: '6px 8px',
-                      textAlign: 'center',
-                      color: '#2d3748',
-                      fontSize: 14,
-                      borderBottom: '1px solid #e2e8f0',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      minWidth: 80,
-                      maxWidth: 180
-                    };
-                    if (key === 'description') {
-                      tdStyle.minWidth = 120;
-                      tdStyle.maxWidth = 220;
-                    }
-                    if (key === 'timestamp') {
-                      tdStyle.minWidth = 90;
-                      tdStyle.maxWidth = 120;
-                    }
-                    return <td key={key} style={tdStyle}>{String(value ?? '')}</td>;
-                  })}
+                   {backupFields.map((key) => {
+                     let value = log[key];
+                     // Compact all columns, set custom width for description and timestamp
+                     let tdStyle: React.CSSProperties = {
+                       padding: '6px 8px',
+                       textAlign: 'center',
+                       color: '#2d3748',
+                       fontSize: 14,
+                       borderBottom: '1px solid #e2e8f0',
+                       whiteSpace: 'nowrap',
+                       overflow: 'hidden',
+                       textOverflow: 'ellipsis',
+                       minWidth: 80,
+                       maxWidth: 180
+                     };
+                     if (key === 'description') {
+                       tdStyle.minWidth = 120;
+                       tdStyle.maxWidth = 220;
+                       tdStyle.whiteSpace = 'pre-line';
+                       tdStyle.wordBreak = 'break-word';
+                     }
+                     if (key === 'timestamp') {
+                       tdStyle.minWidth = 90;
+                       tdStyle.maxWidth = 120;
+                       // Render date and time on separate lines
+                       let dateStr = '';
+                       let timeStr = '';
+                       let ts = value;
+                       if (ts && ts.toDate) ts = ts.toDate();
+                       if (typeof ts === 'string') ts = new Date(ts);
+                       if (ts instanceof Date && !isNaN(ts.getTime())) {
+                         dateStr = ts.toLocaleDateString();
+                         timeStr = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                       } else {
+                         dateStr = String(value ?? '');
+                       }
+                       return (
+                         <td key={key} style={tdStyle}>
+                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+                             <span>{dateStr}</span>
+                             <span style={{ color: '#718096', fontSize: 13 }}>{timeStr}</span>
+                           </div>
+                         </td>
+                       );
+                     }
+                     if (key === 'description') {
+                       return <td key={key} style={tdStyle}><span style={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{String(value ?? '')}</span></td>;
+                     }
+                     return <td key={key} style={tdStyle}>{String(value ?? '')}</td>;
+                   })}
                   <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
                     <button onClick={() => handleEdit(log)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
                     <button onClick={() => handleDelete(log.id)} style={{ padding: '4px 10px', borderRadius: 4, border: 'none', background: '#e53e3e', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
