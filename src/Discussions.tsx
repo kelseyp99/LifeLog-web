@@ -30,8 +30,10 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   // const [filter, setFilter] = useState('');
   // Per-column filters
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
-  // Timestamp AA filter
-  const [timestampAA, setTimestampAA] = useState<{ mode: 'ALL' | 'AFTER', date: string }>({ mode: 'ALL', date: '' });
+  // Timestamp date range filter (like Activity Log)
+  const [dateRange, setDateRange] = useState<'ALL' | '1' | '30' | '180' | 'CUSTOM'>('ALL');
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
 
   // ...existing code...
 
@@ -159,14 +161,29 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   // Filter discussions by text in any visible field and by column dropdowns
   const filteredDiscussions = React.useMemo(() => {
     let filtered = sortedDiscussions;
-    // Timestamp AA filter
-    if (timestampAA.mode === 'AFTER' && timestampAA.date) {
-      const afterDate = new Date(timestampAA.date);
+    // Timestamp date range filter
+    if (dateRange !== 'ALL') {
+      let start: Date | null = null;
+      let end: Date | null = null;
+      const now = new Date();
+      if (dateRange === 'CUSTOM') {
+        if (customStart) start = new Date(customStart);
+        if (customEnd) {
+          end = new Date(customEnd);
+          end.setHours(23, 59, 59, 999);
+        }
+      } else {
+        const days = parseInt(dateRange, 10);
+        start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      }
       filtered = filtered.filter((row: DiscussionRow) => {
         let ts = row.timestamp;
         if (ts && ts.toDate) ts = ts.toDate();
-        else if (typeof ts === 'string' || typeof ts === 'number') ts = new Date(ts);
-  return ts instanceof Date && !isNaN(ts.getTime()) && ts >= afterDate;
+        if (typeof ts === 'string' || typeof ts === 'number') ts = new Date(ts);
+        if (!(ts instanceof Date) || isNaN(ts.getTime())) return false;
+        if (start && ts < start) return false;
+        if (end && ts > end) return false;
+        return true;
       });
     }
     // Apply column dropdown filters
@@ -181,7 +198,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       }
     });
     return filtered;
-  }, [sortedDiscussions, columnFilters, timestampAA]);
+  }, [sortedDiscussions, columnFilters, dateRange, customStart, customEnd]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -243,15 +260,40 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
       <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 700, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
-        {/* Timestamp AA Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 4px 8px' }}>
-          <label style={{ fontWeight: 500, color: '#4a5568', fontSize: 14 }}>Timestamp:</label>
-          <select value={timestampAA.mode} onChange={e => setTimestampAA(a => ({ ...a, mode: e.target.value as 'ALL' | 'AFTER' }))} style={{ padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }}>
+        {/* Timestamp Date Range Filter (like Activity Log) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, width: '100%', maxWidth: 900, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <label htmlFor="dateRange" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>Show:</label>
+          <select
+            id="dateRange"
+            value={dateRange}
+            onChange={e => setDateRange(e.target.value as any)}
+            style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 15 }}
+          >
             <option value="ALL">All</option>
-            <option value="AFTER">After</option>
+            <option value="1">Last 1 day</option>
+            <option value="30">Last 30 days</option>
+            <option value="180">Last 6 months</option>
+            <option value="CUSTOM">Custom range...</option>
           </select>
-          {timestampAA.mode === 'AFTER' && (
-            <input type="date" value={timestampAA.date} onChange={e => setTimestampAA(a => ({ ...a, date: e.target.value }))} style={{ padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }} />
+          {dateRange === 'CUSTOM' && (
+            <>
+              <label htmlFor="customStart" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>From:</label>
+              <input
+                id="customStart"
+                type="date"
+                value={customStart}
+                onChange={e => setCustomStart(e.target.value)}
+                style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 15 }}
+              />
+              <label htmlFor="customEnd" style={{ fontWeight: 500, color: '#4a5568', fontSize: 15 }}>To:</label>
+              <input
+                id="customEnd"
+                type="date"
+                value={customEnd}
+                onChange={e => setCustomEnd(e.target.value)}
+                style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 15 }}
+              />
+            </>
           )}
         </div>
         <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 700, width: '100%' }}>
