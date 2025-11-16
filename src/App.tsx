@@ -38,7 +38,7 @@ function App() {
 
   return (
     <>
-      <header style={{ width: '100vw', minWidth: '100%', background: '#f5f5f5', padding: '0 0 0 0', marginBottom: 0, boxSizing: 'border-box', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 80, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+  <header style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#f5f5f5', padding: '0 0 0 0', boxSizing: 'border-box', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 80, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingLeft: 32 }}>
           <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
         </div>
@@ -63,9 +63,9 @@ function App() {
           {error && <div style={{ color: 'salmon', marginLeft: 12 }}>{error}</div>}
         </div>
       </header>
-      <div style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: '#f7fafc' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <nav style={{ width: '100vw', minWidth: '100%', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
+      <div style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: '#f7fafc', width: 1000, maxWidth: '100vw', margin: '0 auto' }}>
+  <div style={{ flex: 1, minWidth: 0, maxWidth: 700 }}>
+          <nav style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
             <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
             <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>ActivityLog</button>
             <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
@@ -99,7 +99,7 @@ function App() {
             </>
           )}
         </div>
-        <div style={{ width: 220, minWidth: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 8px 0 8px', gap: 24 }}>
+  <div style={{ width: 220, minWidth: 180, maxWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 8px 0 8px', gap: 24, marginTop: 100, marginLeft: 120 }}>
           {/* AdSense Placeholder 1 */}
           <div style={{ width: 180, height: 150, background: '#e2e8f0', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096', fontWeight: 600, fontSize: 16, marginBottom: 12 }}>
             AdSense Placeholder 1
