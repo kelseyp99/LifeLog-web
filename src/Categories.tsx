@@ -15,6 +15,8 @@ interface CategoriesProps {
 export const Categories: React.FC<CategoriesProps> = ({ user }) => {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sortKey, setSortKey] = useState<string>('');
+  const [sortAsc, setSortAsc] = useState<boolean>(true);
 
   const fetchCategories = async () => {
     if (!user) {
@@ -23,7 +25,7 @@ export const Categories: React.FC<CategoriesProps> = ({ user }) => {
     }
     setLoading(true);
     try {
-  const querySnapshot = await getDocs(collection(db, `Users/${user.uid}/Category`));
+      const querySnapshot = await getDocs(collection(db, `Users/${user.uid}/Category`));
       const data: CategoryRow[] = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data()
@@ -37,9 +39,38 @@ export const Categories: React.FC<CategoriesProps> = ({ user }) => {
 
   useEffect(() => {
     fetchCategories();
+    setSortKey('');
+    setSortAsc(true);
     // Only refetch when user changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Sorting logic
+  const sortedCategories = React.useMemo(() => {
+    if (!sortKey) return categories;
+    const sorted = [...categories].sort((a, b) => {
+      let aValue = a[sortKey];
+      let bValue = b[sortKey];
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortAsc ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      if (aValue > bValue) return sortAsc ? 1 : -1;
+      if (aValue < bValue) return sortAsc ? -1 : 1;
+      return 0;
+    });
+    return sorted;
+  }, [categories, sortKey, sortAsc]);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortAsc((asc) => !asc);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
 
   // Only render the fields shown in the backup
   const backupFields = [
@@ -57,13 +88,20 @@ export const Categories: React.FC<CategoriesProps> = ({ user }) => {
         <thead>
           <tr style={{ background: '#f7fafc' }}>
             {backupFields.map((key) => (
-              <th key={key} style={{ padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em' }}>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
+              <th
+                key={key}
+                style={{ cursor: 'pointer', padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none' }}
+                onClick={() => handleSort(key)}
+              >
+                {key.charAt(0).toUpperCase() + key.slice(1)}
+                {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {categories.length > 0 ? (
-            categories.map((cat, idx) => (
+          {sortedCategories.length > 0 ? (
+            sortedCategories.map((cat, idx) => (
               <tr key={cat.id} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
                 {backupFields.map((key) => {
                   let value = cat[key];

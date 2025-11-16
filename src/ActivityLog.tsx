@@ -16,6 +16,8 @@ interface ActivityLogProps {
 export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   const [activityLogs, setActivityLogs] = useState<ActivityLogRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sortKey, setSortKey] = useState<string>('');
+  const [sortAsc, setSortAsc] = useState<boolean>(true);
 
   const fetchActivityLogs = async () => {
     if (!user) {
@@ -38,9 +40,45 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
 
   useEffect(() => {
     fetchActivityLogs();
+    setSortKey('');
+    setSortAsc(true);
     // Only refetch when user changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Sorting logic
+  const sortedActivityLogs = React.useMemo(() => {
+    if (!sortKey) return activityLogs;
+    const sorted = [...activityLogs].sort((a, b) => {
+      let aValue = a[sortKey];
+      let bValue = b[sortKey];
+      // Handle timestamp
+      if (sortKey === 'timestamp') {
+        if (aValue && aValue.toDate) aValue = aValue.toDate();
+        if (bValue && bValue.toDate) bValue = bValue.toDate();
+        aValue = new Date(aValue);
+        bValue = new Date(bValue);
+      }
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortAsc ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      if (aValue > bValue) return sortAsc ? 1 : -1;
+      if (aValue < bValue) return sortAsc ? -1 : 1;
+      return 0;
+    });
+    return sorted;
+  }, [activityLogs, sortKey, sortAsc]);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortAsc((asc) => !asc);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
 
   // Only render the fields shown in the backup
   const backupFields = [
@@ -61,13 +99,20 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         <thead>
           <tr style={{ background: '#f7fafc' }}>
             {backupFields.map((key) => (
-              <th key={key} style={{ padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em' }}>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
+              <th
+                key={key}
+                style={{ cursor: 'pointer', padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none' }}
+                onClick={() => handleSort(key)}
+              >
+                {key.charAt(0).toUpperCase() + key.slice(1)}
+                {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {activityLogs.length > 0 ? (
-            activityLogs.map((log, idx) => (
+          {sortedActivityLogs.length > 0 ? (
+            sortedActivityLogs.map((log, idx) => (
               <tr key={log.id} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
                 {backupFields.map((key) => {
                   let value = log[key];
