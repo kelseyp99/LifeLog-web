@@ -221,20 +221,20 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         </form>
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
-      <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 520, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 520, width: '100%' }}>
+      <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 700, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 700, width: '100%' }}>
           <thead>
             <tr style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>
               {backupFields.map((key) => {
                 // Get unique values for dropdown
                 let uniqueValues: string[] = Array.from(new Set(activityLogs.map(row => String(row[key] ?? '')))).filter(v => v !== '');
-                // Set custom width for description column
+                // Compact all columns, set custom width for description
                 let thStyle: React.CSSProperties = {
                   cursor: 'pointer',
-                  padding: '12px 24px',
+                  padding: '8px 10px',
                   fontWeight: 600,
                   color: '#4a5568',
-                  fontSize: 16,
+                  fontSize: 15,
                   borderBottom: '2px solid #e2e8f0',
                   textAlign: 'center',
                   letterSpacing: '0.02em',
@@ -242,14 +242,16 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                   background: '#f7fafc',
                   position: 'sticky',
                   top: 0,
-                  zIndex: 2
+                  zIndex: 2,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  minWidth: 80,
+                  maxWidth: 180
                 };
                 if (key === 'description') {
                   thStyle.minWidth = 120;
                   thStyle.maxWidth = 220;
-                  thStyle.whiteSpace = 'nowrap';
-                  thStyle.overflow = 'hidden';
-                  thStyle.textOverflow = 'ellipsis';
                 }
                 return (
                   <th
@@ -297,20 +299,22 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                         value = value;
                       }
                     }
-                    // Set custom width for description column
+                    // Compact all columns, set custom width for description
                     let tdStyle: React.CSSProperties = {
-                      padding: '10px 20px',
+                      padding: '6px 8px',
                       textAlign: 'center',
                       color: '#2d3748',
-                      fontSize: 15,
-                      borderBottom: '1px solid #e2e8f0'
+                      fontSize: 14,
+                      borderBottom: '1px solid #e2e8f0',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      minWidth: 80,
+                      maxWidth: 180
                     };
                     if (key === 'description') {
                       tdStyle.minWidth = 120;
                       tdStyle.maxWidth = 220;
-                      tdStyle.whiteSpace = 'nowrap';
-                      tdStyle.overflow = 'hidden';
-                      tdStyle.textOverflow = 'ellipsis';
                     }
                     return <td key={key} style={tdStyle}>{String(value ?? '')}</td>;
                   })}
