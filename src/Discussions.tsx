@@ -27,6 +27,13 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
   const [form, setForm] = useState<Partial<DiscussionRow>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string>('');
+  const [filter, setFilter] = useState('');
+  // Per-column filters
+  const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+
+  // ...existing code...
+
+
   // Handle form input changes
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -147,6 +154,32 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     return sorted;
   }, [discussions, sortKey, sortAsc]);
 
+  // Filter discussions by text in any visible field and by column dropdowns
+  const filteredDiscussions = React.useMemo(() => {
+    let filtered = sortedDiscussions;
+    // Apply text filter
+    if (filter.trim()) {
+      const lower = filter.toLowerCase();
+      filtered = filtered.filter((row: DiscussionRow) =>
+        backupFields.some((key: string) =>
+          (row[key] !== undefined && row[key] !== null && String(row[key]).toLowerCase().includes(lower))
+        )
+      );
+    }
+    // Apply column dropdown filters
+    Object.entries(columnFilters).forEach(([key, value]) => {
+      if (value && value !== '__ALL__') {
+        filtered = filtered.filter((row: DiscussionRow) => {
+          if (key === 'activityLogs' && Array.isArray(row[key])) {
+            return String(row[key].length) === value;
+          }
+          return String(row[key] ?? '') === value;
+        });
+      }
+    });
+    return filtered;
+  }, [sortedDiscussions, filter, columnFilters]);
+
   const handleSort = (key: string) => {
     if (sortKey === key) {
       setSortAsc((asc) => !asc);
@@ -170,6 +203,14 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Discussions Table</h2>
       {!user && <div style={{ color: 'salmon', marginBottom: 12 }}>Please sign in to view your discussions.</div>}
       {formError && <div style={{ color: 'red', marginBottom: 8 }}>{formError}</div>}
+      {/* Filter Input */}
+      <input
+        type="text"
+        placeholder="Filter discussions..."
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+        style={{ marginBottom: 16, padding: 8, borderRadius: 6, border: '1px solid #cbd5e1', minWidth: 220 }}
+      />
       {/* Add/Edit Form */}
       {user && (
         <form onSubmit={editingId ? handleUpdate : handleAdd} style={{ display: 'flex', gap: 12, marginBottom: 18, alignItems: 'center', flexWrap: 'wrap', background: '#f7fafc', padding: 12, borderRadius: 8 }}>
@@ -206,26 +247,52 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
         </form>
       )}
       {loading ? <div style={{ marginBottom: 12 }}>Loading...</div> : null}
-      <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 600, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
-        <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 600, width: '100%' }}>
+      <div style={{ maxHeight: 420, overflowY: 'auto', width: '100%', minWidth: 900, background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.08)', margin: '0 auto' }}>
+        <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: 900, width: '100%' }}>
           <thead>
             <tr style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>
-              {backupFields.map((key) => (
-                <th
-                  key={key}
-                  style={{ cursor: 'pointer', padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none', background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}
-                  onClick={() => handleSort(key)}
-                >
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                  {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
-                </th>
-              ))}
+              {backupFields.map((key) => {
+                // Get unique values for dropdown
+                let uniqueValues: string[] = [];
+                if (['description', 'typeSay', 'cleared'].includes(key)) {
+                  uniqueValues = Array.from(new Set(discussions.map(row => String(row[key] ?? '')))).filter(v => v !== '');
+                } else if (key === 'activityLogs') {
+                  uniqueValues = Array.from(new Set(discussions.map(row => Array.isArray(row[key]) ? String(row[key].length) : '0')));
+                }
+                return (
+                  <th
+                    key={key}
+                    style={{ cursor: 'pointer', padding: '8px 10px', minWidth: 80, maxWidth: 180, fontWeight: 600, color: '#4a5568', fontSize: 15, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', userSelect: 'none', background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    onClick={() => handleSort(key)}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span>
+                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                        {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
+                      </span>
+                      {uniqueValues.length > 0 && (
+                        <select
+                          value={columnFilters[key] || '__ALL__'}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => setColumnFilters(f => ({ ...f, [key]: e.target.value }))}
+                          style={{ marginTop: 4, padding: 2, borderRadius: 4, border: '1px solid #cbd5e1', fontSize: 13 }}
+                        >
+                          <option value="__ALL__">All</option>
+                          {uniqueValues.map(val => (
+                            <option key={val} value={val}>{val}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
               <th style={{ background: '#f7fafc', position: 'sticky', top: 0, zIndex: 2 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {sortedDiscussions.length > 0 ? (
-              sortedDiscussions.map((discussion, idx) => (
+            {filteredDiscussions.length > 0 ? (
+              filteredDiscussions.map((discussion: DiscussionRow, idx: number) => (
                 <tr key={discussion.id + '-' + idx} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
                   {backupFields.map((key) => {
                     let value = discussion[key];
@@ -241,7 +308,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
                     if (key === 'activityLogs' && Array.isArray(value)) {
                       value = value.length + ' logs';
                     }
-                    return <td key={key} style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>{String(value ?? '')}</td>;
+                    return <td key={key} style={{ padding: '6px 8px', minWidth: 80, maxWidth: 180, textAlign: 'center', color: '#2d3748', fontSize: 14, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(value ?? '')}</td>;
                   })}
                   <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
                     <button onClick={() => handleEdit(discussion)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
