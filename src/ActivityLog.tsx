@@ -286,6 +286,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                   thStyle.minWidth = 90;
                   thStyle.maxWidth = 120;
                 }
+                // Remove filter dropdown for description column
+                const showDropdown = key !== 'description' && uniqueValues.length > 0;
                 return (
                   <th
                     key={key}
@@ -297,7 +299,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                         {key.charAt(0).toUpperCase() + key.slice(1)}
                         {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
                       </span>
-                      {uniqueValues.length > 0 && (
+                      {showDropdown && (
                         <select
                           value={columnFilters[key] || '__ALL__'}
                           onClick={e => e.stopPropagation()}
