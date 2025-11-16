@@ -66,13 +66,18 @@ function Home() {
 
   return (
     <>
-  <header style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#f5f5f5', padding: '0 0 0 0', boxSizing: 'border-box', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 80, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingLeft: 32 }}>
-          <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }} />
+  <header style={{ width: 1000, maxWidth: '100vw', margin: '32px auto 0 auto', background: '#f5f5f5', padding: '0 0 0 0', boxSizing: 'border-box', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 80, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', paddingLeft: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <img src={lifeLinkLog} alt="LifeLog Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginRight: 0 }} />
+            <h1 style={{ marginLeft: 0, textAlign: 'left', fontFamily: 'sans-serif', margin: 0, fontSize: '2.2rem', letterSpacing: '0.05em', fontWeight: 700, color: '#2d3748', whiteSpace: 'nowrap' }}>
+              Life<span style={{ fontStyle: 'italic', fontWeight: 400 }}>Log</span>
+            </h1>
+          </div>
+          <span style={{ fontSize: 13, color: '#3182ce', marginLeft: 64, marginTop: -2 }}>
+            AI powered journaling app to help manage your health and more.
+          </span>
         </div>
-        <h1 style={{ flex: 1, textAlign: 'center', fontFamily: 'sans-serif', margin: 0, fontSize: '2.2rem', letterSpacing: '0.05em', fontWeight: 700, color: '#2d3748' }}>
-          Life<span style={{ fontStyle: 'italic', fontWeight: 400 }}>Log</span>
-        </h1>
         <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingRight: 32 }}>
           {!user ? (
             <button onClick={handleSignIn} style={{ padding: '8px 24px', fontSize: 16, borderRadius: 8, background: '#4285F4', color: '#fff', border: 'none', cursor: 'pointer' }}>
