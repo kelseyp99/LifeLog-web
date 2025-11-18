@@ -44,7 +44,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         description: form.description || '',
         timestamp: new Date(),
         cleared: form.cleared || '',
-        responseType: form.responseType || '',
+        type: form.type || '',
       };
       await addDoc(collection(db, `Users/${user.uid}/ActivityLog`), newDoc);
       setForm({});
@@ -56,8 +56,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
 
   // Start editing an activity log
   const handleEdit = (row: ActivityLogRow) => {
-    setEditingId(row.id);
-    setForm({ ...row });
+  setEditingId(row.id);
+  // Map responseType to type for editing legacy rows
+  setForm({ ...row, type: row.type || row.responseType || '' });
   };
 
   // Save edited activity log
@@ -71,7 +72,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         category: form.category || '',
         description: form.description || '',
         cleared: form.cleared || '',
-        responseType: form.responseType || '',
+        type: form.type || '',
         // Don't update timestamp here
       };
       await updateDoc(ref, updatedDoc);
@@ -194,11 +195,11 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
 
   // Only render the fields shown in the backup
   const backupFields = [
-    'category',
-    'description',
-    'timestamp',
-    'cleared',
-    'responseType'
+  'category',
+  'description',
+  'timestamp',
+  'cleared',
+  'responseType'
   ];
 
   return (
@@ -233,9 +234,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
             style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', minWidth: 70 }}
           />
           <input
-            name="responseType"
-            placeholder="Response Type"
-            value={form.responseType || ''}
+            name="type"
+            placeholder="Type"
+            value={form.type || ''}
             onChange={handleFormChange}
             style={{ padding: 6, borderRadius: 4, border: '1px solid #cbd5e1', minWidth: 90 }}
           />
@@ -332,7 +333,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <span>
-                        {key.charAt(0).toUpperCase() + key.slice(1)}
+                        {key === 'responseType' ? 'Type' : key.charAt(0).toUpperCase() + key.slice(1)}
                         {sortKey === key ? (sortAsc ? ' ▲' : ' ▼') : ''}
                       </span>
                       {showDropdown && (
