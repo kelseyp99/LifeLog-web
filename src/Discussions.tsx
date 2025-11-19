@@ -57,7 +57,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
         cleared: form.cleared || '',
         activityLogs: [],
       };
-      await addDoc(collection(db, `Users/${user.uid}/Discussion`), newDoc);
+  await addDoc(collection(db, `Users/${user.uid}/Discussions`), newDoc);
       setForm({});
       fetchDiscussions();
     } catch (err) {
@@ -77,7 +77,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     setFormError('');
     if (!user || !editingId) return;
     try {
-      const ref = doc(db, `Users/${user.uid}/Discussion`, editingId);
+  const ref = doc(db, `Users/${user.uid}/Discussions`, editingId);
       const updatedDoc = {
         description: form.description || '',
         typeSay: form.typeSay || '',
@@ -98,7 +98,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     if (!user) return;
     if (!window.confirm('Delete this discussion?')) return;
     try {
-      await deleteDoc(doc(db, `Users/${user.uid}/Discussion`, id));
+  await deleteDoc(doc(db, `Users/${user.uid}/Discussions`, id));
       fetchDiscussions();
     } catch (err) {
       alert('Failed to delete discussion.');
@@ -112,7 +112,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     }
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, `Users/${user.uid}/Discussion`));
+  const querySnapshot = await getDocs(collection(db, `Users/${user.uid}/Discussions`));
       const data: DiscussionRow[] = querySnapshot.docs.map((doc: DocumentData) => ({
         id: doc.id,
         ...doc.data()
@@ -331,7 +331,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
                         >
                           <option value="__ALL__">All</option>
                           {uniqueValues.map(val => (
-                            <option key={val} value={val}>{val}</option>
+                            <option key={key + '-' + val} value={val}>{val}</option>
                           ))}
                         </select>
                       )}
@@ -372,7 +372,7 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
                     if (key === 'activityLogs' && Array.isArray(value)) {
                       value = value.length + ' logs';
                     }
-                    return <td key={key} style={{ padding: '6px 8px', minWidth: 80, maxWidth: 180, textAlign: 'center', color: '#2d3748', fontSize: 14, borderBottom: '1px solid #e2e8f0', whiteSpace: 'pre-line', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value ?? ''}</td>;
+                    return <td key={key + '-' + discussion.id + '-' + idx} style={{ padding: '6px 8px', minWidth: 80, maxWidth: 180, textAlign: 'center', color: '#2d3748', fontSize: 14, borderBottom: '1px solid #e2e8f0', whiteSpace: 'pre-line', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value ?? ''}</td>;
                   })}
                   <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
                     <button onClick={() => handleEdit(discussion)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>

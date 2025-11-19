@@ -359,7 +359,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
           <tbody>
             {filteredActivityLogs.length > 0 ? (
               filteredActivityLogs.map((log, idx) => (
-                <tr key={log.id} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
+                <tr key={log.id + '-' + idx} style={{ background: idx % 2 === 0 ? '#f9fafb' : '#fff' }}>
                    {backupFields.map((key) => {
                      let value = log[key];
                      // Compact all columns, set custom width for description and timestamp
@@ -397,7 +397,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                          dateStr = String(value ?? '');
                        }
                        return (
-                         <td key={key} style={tdStyle}>
+                         <td key={key + '-' + log.id + '-' + idx} style={tdStyle}>
                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
                              <span>{dateStr}</span>
                              <span style={{ color: '#718096', fontSize: 13 }}>{timeStr}</span>
@@ -406,9 +406,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
                        );
                      }
                      if (key === 'description') {
-                       return <td key={key} style={tdStyle}><span style={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{String(value ?? '')}</span></td>;
+                       return <td key={key + '-' + log.id + '-' + idx} style={tdStyle}><span style={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>{String(value ?? '')}</span></td>;
                      }
-                     return <td key={key} style={tdStyle}>{String(value ?? '')}</td>;
+                     return <td key={key + '-' + log.id + '-' + idx} style={tdStyle}>{String(value ?? '')}</td>;
                    })}
                   <td style={{ textAlign: 'center', padding: '8px 8px', borderBottom: '1px solid #e2e8f0' }}>
                     <button onClick={() => handleEdit(log)} style={{ marginRight: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: '#ecc94b', color: '#2d3748', fontWeight: 600, cursor: 'pointer' }}>Edit</button>

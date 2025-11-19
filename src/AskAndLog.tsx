@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { AskExportIntegration } from './AskExportIntegration';
+import { auth } from './firebaseConfig';
 
 const categories = [
   'Health', 'Work', 'Personal', 'Fitness', 'Diet', 'Mood', 'Other'
@@ -13,6 +15,7 @@ type HistoryItem = {
 
 
 export default function AskAndLog() {
+  const user = auth.currentUser;
   const [input, setInput] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isQuestion, setIsQuestion] = useState<boolean>(false);
@@ -52,12 +55,13 @@ export default function AskAndLog() {
 
   return (
     <div style={{ maxWidth: 600, margin: '32px auto', padding: 24, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)' }}>
+      <AskExportIntegration user={user} />
       <h2>Ask & Log</h2>
       <div style={{ minHeight: 120, marginBottom: 24, background: '#f7fafc', borderRadius: 8, padding: 16 }}>
         <strong>History:</strong>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {history.map((item, idx) => (
-            <li key={idx} style={{ marginBottom: 8 }}>
+            <li key={item.type + '-' + item.text + '-' + idx} style={{ marginBottom: 8 }}>
               <span style={{ fontWeight: 600 }}>{item.type === 'question' ? 'Q:' : 'Activity:'}</span> {item.text}
               {item.categories && item.categories.length > 0 && (
                 <span style={{ color: '#888', fontSize: 13 }}> [Categories: {item.categories.join(', ')}]</span>
@@ -83,8 +87,8 @@ export default function AskAndLog() {
         </div>
         <div>
           <strong>Categories:</strong>
-          {categories.map(cat => (
-            <label key={cat} style={{ marginRight: 12 }}>
+          {categories.map((cat, catIdx) => (
+            <label key={cat + '-' + catIdx} style={{ marginRight: 12 }}>
               <input
                 type="checkbox"
                 checked={selectedCategories.includes(cat)}
