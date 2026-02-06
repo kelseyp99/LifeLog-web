@@ -18,12 +18,16 @@ export const AskExportModal: React.FC<AskExportModalProps> = ({ activityLogs, op
   const [customEnd, setCustomEnd] = useState('');
   const [question, setQuestion] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv');
 
   // Filter logic (category + date)
   const filteredLogs = useMemo(() => {
     let filtered = activityLogs;
     if (category) {
-      filtered = filtered.filter(row => row.category === category);
+      filtered = filtered.filter(row =>
+        typeof row.category === 'string' &&
+        row.category.toLowerCase() === category.toLowerCase()
+      );
     }
     if (dateRange !== 'ALL') {
       let start: Date | null = null;
@@ -55,29 +59,72 @@ export const AskExportModal: React.FC<AskExportModalProps> = ({ activityLogs, op
   // Download and clipboard logic
   const handleExport = async () => {
     setDownloading(true);
-    const lines = filteredLogs.map(row => {
-      let ts = row.timestamp;
-      if (ts && ts.toDate) ts = ts.toDate();
-      if (typeof ts === 'string') ts = new Date(ts);
-      const dateStr = ts instanceof Date && !isNaN(ts.getTime()) ? ts.toLocaleDateString() : String(row.timestamp);
-      return `${dateStr}\t${row.category}\t${row.description}`;
-    });
-    const fileContent = lines.join('\n');
-    const blob = new Blob([fileContent], { type: 'text/plain' });
-    const fileName = `activitylog_export_${Date.now()}.txt`;
-    // Download file
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    let fileContent = '';
+    let fileName = '';
+    let blob;
+    if (exportFormat === 'csv') {
+      // CSV header
+      fileContent = 'Date,Category,Description\n';
+      fileContent += filteredLogs.map(row => {
+        let ts = row.timestamp;
+        if (ts && ts.toDate) ts = ts.toDate();
+        if (typeof ts === 'string') ts = new Date(ts);
+        const dateStr = ts instanceof Date && !isNaN(ts.getTime()) ? ts.toLocaleDateString() : String(row.timestamp);
+        // Escape quotes and commas
+        const desc = String(row.description).replace(/"/g, '""');
+        return `"${dateStr}","${row.category}","${desc}"`;
+      }).join('\n');
+      blob = new Blob([fileContent], { type: 'text/csv' });
+      fileName = `activitylog_export_${Date.now()}.csv`;
+    } else if (exportFormat === 'pdf') {
+      // Dynamically import jsPDF
+      const jsPDF = (await import('jspdf')).default;
+      const doc = new jsPDF();
+      doc.text('Activity Log Export', 10, 10);
+      let y = 20;
+      doc.text('Date', 10, y);
+      doc.text('Category', 50, y);
+      doc.text('Description', 100, y);
+      y += 8;
+      filteredLogs.forEach(row => {
+        let ts = row.timestamp;
+        if (ts && ts.toDate) ts = ts.toDate();
+        if (typeof ts === 'string') ts = new Date(ts);
+        const dateStr = ts instanceof Date && !isNaN(ts.getTime()) ? ts.toLocaleDateString() : String(row.timestamp);
+        doc.text(String(dateStr), 10, y);
+        doc.text(String(row.category), 50, y);
+        doc.text(String(row.description), 100, y);
+        y += 8;
+        if (y > 280) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+      fileName = `activitylog_export_${Date.now()}.pdf`;
+      doc.save(fileName);
+      // Copy question and file name to clipboard
+      const clipboardText = `Question: ${question}\nFile: ${fileName}`;
+      await navigator.clipboard.writeText(clipboardText);
+      setDownloading(false);
+      onClose();
+      alert('Exported as PDF and copied to clipboard!');
+      return;
+    }
+    // Download file (CSV)
+    if (exportFormat === 'csv' && blob) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob as Blob);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
     // Copy question and file name to clipboard
     const clipboardText = `Question: ${question}\nFile: ${fileName}`;
     await navigator.clipboard.writeText(clipboardText);
     setDownloading(false);
     onClose();
-    alert('Exported and copied to clipboard!');
+    alert(`Exported as ${exportFormat.toUpperCase()} and copied to clipboard!`);
   };
 
   if (!open) return null;
@@ -109,13 +156,20 @@ export const AskExportModal: React.FC<AskExportModalProps> = ({ activityLogs, op
             </>
           )}
         </div>
+        <div style={{ marginBottom: 12 }}>
+          <label>Export Format: </label>
+          <select value={exportFormat} onChange={e => setExportFormat(e.target.value as 'csv' | 'pdf')} style={{ marginRight: 12 }}>
+            <option value="csv">CSV</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
         <div style={{ marginBottom: 12, maxHeight: 180, overflowY: 'auto', border: '1px solid #eee', borderRadius: 6, padding: 8 }}>
           <table style={{ width: '100%', fontSize: 14 }}>
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Category</th>
-                <th>Description</th>
+                <th style={{ textAlign: 'left', paddingLeft: 16 }}>Description</th>
               </tr>
             </thead>
             <tbody>
@@ -128,7 +182,7 @@ export const AskExportModal: React.FC<AskExportModalProps> = ({ activityLogs, op
                   <tr key={row.id + '-' + idx}>
                     <td>{dateStr}</td>
                     <td>{row.category}</td>
-                    <td>{row.description}</td>
+                    <td style={{ textAlign: 'left', paddingLeft: 16 }}>{row.description}</td>
                   </tr>
                 );
               })}
