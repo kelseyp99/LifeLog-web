@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AskExportModal } from './AskExportModal';
 import { db } from './firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
@@ -14,6 +15,7 @@ interface ActivityLogProps {
 }
 
 export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
+  const [showExportModal, setShowExportModal] = useState(false);
   // Date range filter
   const [dateRange, setDateRange] = useState<'ALL' | '1' | '30' | '180' | 'CUSTOM'>('ALL');
   const [customStart, setCustomStart] = useState<string>('');
@@ -205,6 +207,15 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   return (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Activity Log Table</h2>
+      <button
+        style={{ marginBottom: 16, padding: '8px 20px', borderRadius: 8, background: '#3182ce', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
+        onClick={() => setShowExportModal(true)}
+      >Ask & Export</button>
+      <AskExportModal
+        activityLogs={activityLogs}
+        open={showExportModal}
+        onClose={() => setShowExportModal(false)}
+      />
       {!user && <div style={{ color: 'salmon', marginBottom: 12 }}>Please sign in to view your Activity Log.</div>}
       {formError && <div style={{ color: 'red', marginBottom: 8 }}>{formError}</div>}
       {/* Add/Edit Form */}
