@@ -18,7 +18,8 @@ import { useState, useEffect } from 'react'
 import type { User } from 'firebase/auth'
 import { auth, provider } from './firebaseConfig'
 import { signInWithPopup, signOut } from 'firebase/auth'
-import DietitianList from './DietitianList'
+import ExpertList from './DietitianList'
+import SponsorBanner from './SponsorBanner';
 import { Discussions } from './Discussions';
 import { ActivityLog } from './ActivityLog';
 import { Profile } from './Profile';
@@ -96,9 +97,8 @@ function Home() {
           {error && <div style={{ color: 'salmon', marginLeft: 12 }}>{error}</div>}
         </div>
       </header>
-      <div style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: '#f7fafc', width: 1000, maxWidth: '100vw', margin: '0 auto' }}>
-  <div style={{ flex: 1, minWidth: 0, maxWidth: 700 }}>
-          <nav style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f7fafc', width: 1000, maxWidth: '100vw', margin: '0 auto' }}>
+        <nav style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
             <button onClick={() => setPage('home')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Home</button>
             <div style={{ position: 'relative', display: 'inline-block' }}
                  onMouseEnter={() => setShowUserDataMenu(true)}
@@ -107,7 +107,7 @@ function Home() {
                 User Data ▼
               </button>
               {showUserDataMenu && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1px solid #ccc', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 100, minWidth: 180, padding: '8px 0' }}>
+                <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1px solid #ccc', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 1100, minWidth: 180, padding: '8px 0' }}>
                   <button onClick={() => { setPage('discussions'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Discussions</button>
                   <button onClick={() => { setPage('activitylog'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Activity Log</button>
                   <button onClick={() => { setPage('categories'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Categories</button>
@@ -117,27 +117,17 @@ function Home() {
             <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Experts</button>
             <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
             <button onClick={() => setPage('about')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>About</button>
-          </nav>
-  // Add state for dropdown menu
-  const [showUserDataMenu, setShowUserDataMenu] = useState(false);
+        </nav>
+        <SponsorBanner />
+        <div style={{ flex: 1, minWidth: 0, maxWidth: 700, margin: '0 auto', width: '100%' }}>
           {page === 'home' && <Home />}
           {page === 'askandlog' && <AskAndLog />}
           {page === 'about' && <About />}
-          {page === 'dietitians' && <DietitianList />}
+          {page === 'dietitians' && <ExpertList />}
           {page === 'discussions' && <Discussions user={user} />}
           {page === 'activitylog' && <ActivityLog user={user} />}
           {page === 'categories' && <Categories user={user} />}
           {page === 'profile' && <Profile user={user} />}
-        </div>
-  <div style={{ width: 220, minWidth: 180, maxWidth: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 8px 0 8px', gap: 24, marginTop: 100, marginLeft: 120 }}>
-          {/* AdSense Placeholder 1 */}
-          <div style={{ width: 180, height: 150, background: '#e2e8f0', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096', fontWeight: 600, fontSize: 16, marginBottom: 12 }}>
-            AdSense Placeholder 1
-          </div>
-          {/* AdSense Placeholder 2 */}
-          <div style={{ width: 180, height: 150, background: '#e2e8f0', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#718096', fontWeight: 600, fontSize: 16 }}>
-            AdSense Placeholder 2
-          </div>
         </div>
       </div>
     </>
