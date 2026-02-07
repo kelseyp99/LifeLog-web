@@ -32,6 +32,7 @@ function App() {
   const [page, setPage] = useState('home');
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showUserDataMenu, setShowUserDataMenu] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
@@ -99,14 +100,26 @@ function Home() {
   <div style={{ flex: 1, minWidth: 0, maxWidth: 700 }}>
           <nav style={{ width: 1000, maxWidth: '100vw', margin: '0 auto', background: '#e0e0e0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '32px', padding: '12px 0', marginBottom: 24, boxSizing: 'border-box', fontFamily: 'sans-serif', fontSize: '1.1rem', fontWeight: 500 }}>
             <button onClick={() => setPage('home')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Home</button>
-            <button onClick={() => setPage('askandlog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Ask & Log</button>
-            <button onClick={() => setPage('discussions')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Discussions</button>
-            <button onClick={() => setPage('activitylog')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Activity Log</button>
-            <button onClick={() => setPage('categories')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Categories</button>
-            <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Dietitians</button>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <button style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}
+                onClick={() => setShowUserDataMenu(v => !v)}
+                onBlur={() => setShowUserDataMenu(false)}
+              >User Data ▼</button>
+              {showUserDataMenu && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', border: '1px solid #ccc', borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 100, minWidth: 180, padding: '8px 0' }}>
+                  <button onClick={() => { setPage('askandlog'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Ask & Log</button>
+                  <button onClick={() => { setPage('discussions'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Discussions</button>
+                  <button onClick={() => { setPage('activitylog'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Activity Log</button>
+                  <button onClick={() => { setPage('categories'); setShowUserDataMenu(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', color: '#333', background: 'none', border: 'none', padding: '8px 16px', fontSize: 'inherit', cursor: 'pointer' }}>Categories</button>
+                </div>
+              )}
+            </div>
+            <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Experts</button>
             <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
             <button onClick={() => setPage('about')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>About</button>
           </nav>
+  // Add state for dropdown menu
+  const [showUserDataMenu, setShowUserDataMenu] = useState(false);
           {page === 'home' && <Home />}
           {page === 'askandlog' && <AskAndLog />}
           {page === 'about' && <About />}
