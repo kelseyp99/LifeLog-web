@@ -107,8 +107,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
     try {
       const querySnapshot = await getDocs(collection(db, `Users/${user.uid}/ActivityLog`));
       const data: ActivityLogRow[] = querySnapshot.docs.map((doc: DocumentData) => ({
+        ...doc.data(),
         id: doc.id,
-        ...doc.data()
       }));
       setActivityLogs(data);
     } catch (err) {
@@ -201,7 +201,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   'description',
   'timestamp',
   'cleared',
-  'responseType'
+  'responseType',
+  'expertName'
   ];
 
   return (

@@ -24,9 +24,13 @@ import { Discussions } from './Discussions';
 import { ActivityLog } from './ActivityLog';
 import { Profile } from './Profile';
 import { Categories } from './Categories';
+import ShareToken from './ShareToken';
+import ExpertTokenView from './ExpertTokenView';
+import ManageSharedData from './ManageSharedData';
 import './App.css'
 import lifeLinkLog from './assets/LifeLinkLog.png';
 import AskAndLog from './AskAndLog';
+import { ExpertProfile } from './ExpertProfile';
 
 
 function App() {
@@ -116,6 +120,10 @@ function Home() {
             </div>
             <button onClick={() => setPage('dietitians')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Experts</button>
             <button onClick={() => setPage('profile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Profile</button>
+            <button onClick={() => setPage('sharetoken')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Share Data</button>
+            <button onClick={() => setPage('manageshared')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Manage Shared</button>
+            <button onClick={() => setPage('expertview')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Expert View</button>
+            {user && <button onClick={() => setPage('expertprofile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Expert Profile</button>}
             <button onClick={() => setPage('about')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>About</button>
         </nav>
         <SponsorBanner />
@@ -128,6 +136,10 @@ function Home() {
           {page === 'activitylog' && <ActivityLog user={user} />}
           {page === 'categories' && <Categories user={user} />}
           {page === 'profile' && <Profile user={user} />}
+          {page === 'sharetoken' && user && <ShareToken userId={user.uid} />}
+          {page === 'manageshared' && user && <ManageSharedData userId={user.uid} />}
+          {page === 'expertview' && <ExpertTokenView user={user} />}
+          {page === 'expertprofile' && <ExpertProfile user={user} />}
         </div>
       </div>
     </>
