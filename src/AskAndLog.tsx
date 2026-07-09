@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AskExportIntegration } from './AskExportIntegration';
 import { auth, db } from './firebaseConfig';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { logEvent, logSelectContent } from './analytics';
 
 type HistoryItem = {
   type: 'question' | 'activity';
@@ -70,8 +71,16 @@ export default function AskAndLog() {
       setSummary('This is a summary of your question: ' + input);
       setShowSummary(true);
       setHistory((h) => [...h, { type: 'question', text: input, categories: selectedCategories, file }]);
+      logEvent('question_asked', {
+        question_length: input.length,
+        category_count: selectedCategories.length,
+        has_attachment: Boolean(file),
+      });
     } else {
       setHistory((h) => [...h, { type: 'activity', text: input, categories: selectedCategories }]);
+      logEvent('activity_created', {
+        category_count: selectedCategories.length,
+      });
     }
     setInput('');
     setSelectedCategories([]);
@@ -130,7 +139,10 @@ export default function AskAndLog() {
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15 }}>
-            <input type="checkbox" checked={isQuestion} onChange={e => setIsQuestion(e.target.checked)} style={{ accentColor: '#3182ce' }} />
+            <input type="checkbox" checked={isQuestion} onChange={e => {
+              setIsQuestion(e.target.checked);
+              logSelectContent('ask_and_log_mode', e.target.checked ? 'question' : 'activity');
+            }} style={{ accentColor: '#3182ce' }} />
             This is a question for AI
           </label>
         </div>

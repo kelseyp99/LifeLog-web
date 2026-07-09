@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { logEvent } from './analytics';
 
 
 type BannerType = {
@@ -68,7 +69,16 @@ export default function SponsorBanner() {
     <div style={stickyStyle}>
       <div style={{ border: '1px solid #eee', borderRadius: 6, background: '#fafbfc', padding: 4, minWidth: 320, maxWidth: 700, width: '100%', display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontWeight: 600, color: '#888', fontSize: 13, marginRight: 8 }}>{banner.label}</span>
-        <a href={banner.clickUrl} target="_blank" rel="noopener" style={{ flex: 1, display: 'block' }}>
+        <a
+          href={banner.clickUrl}
+          target="_blank"
+          rel="noopener"
+          onClick={() => logEvent('select_promotion', {
+            promotion_name: banner.label,
+            creative_name: banner.imageUrl,
+          })}
+          style={{ flex: 1, display: 'block' }}
+        >
           <img src={banner.imageUrl} alt={banner.label} style={{ maxHeight: 60, maxWidth: '100%', objectFit: 'contain', display: 'block', margin: '0 auto' }} />
         </a>
       </div>

@@ -44,20 +44,41 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Add new discussion
+  // Add new discussion and auto-create an ActivityLog summary entry
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     if (!user) return;
     try {
-      const newDoc = {
-        description: form.description || '',
-        timestamp: new Date(),
-        typeSay: form.typeSay || '',
+      const now = new Date();
+      const description = form.description || '';
+      const typeSay = form.typeSay || '';
+
+      // 1. Create a summary ActivityLog entry from the discussion description
+      const activityLogDoc = {
+        category: typeSay === 'ask' ? 'question' : 'activity',
+        description: description,
+        summary: description,
+        timestamp: now,
         cleared: form.cleared || '',
-        activityLogs: [],
+        type: 'discussion',
+        sourceType: typeSay || 'tell',
       };
-  await addDoc(collection(db, `Users/${user.uid}/Discussions`), newDoc);
+      const activityLogRef = await addDoc(
+        collection(db, `Users/${user.uid}/ActivityLog`),
+        activityLogDoc
+      );
+
+      // 2. Create the discussion with the linked ActivityLog ID
+      const newDoc = {
+        description: description,
+        timestamp: now,
+        typeSay: typeSay,
+        cleared: form.cleared || '',
+        activityLogs: [activityLogRef.id],
+      };
+      await addDoc(collection(db, `Users/${user.uid}/Discussions`), newDoc);
+
       setForm({});
       fetchDiscussions();
     } catch (err) {
@@ -71,20 +92,51 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     setForm({ ...row });
   };
 
-  // Save edited discussion
+  // Save edited discussion and sync linked ActivityLog entry
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     if (!user || !editingId) return;
     try {
-  const ref = doc(db, `Users/${user.uid}/Discussions`, editingId);
+      const description = form.description || '';
+      const typeSay = form.typeSay || '';
+
+      const ref = doc(db, `Users/${user.uid}/Discussions`, editingId);
       const updatedDoc = {
-        description: form.description || '',
-        typeSay: form.typeSay || '',
+        description: description,
+        typeSay: typeSay,
         cleared: form.cleared || '',
         // Don't update timestamp or activityLogs here
       };
       await updateDoc(ref, updatedDoc);
+
+      // Also update the linked ActivityLog entry (first one in the array)
+      const linkedLogs: string[] = Array.isArray(form.activityLogs) ? form.activityLogs : [];
+      if (linkedLogs.length > 0) {
+        const logRef = doc(db, `Users/${user.uid}/ActivityLog`, linkedLogs[0]);
+        await updateDoc(logRef, {
+          description: description,
+          summary: description,
+          sourceType: typeSay || 'tell',
+        });
+      } else {
+        // No linked log yet — create one now
+        const activityLogDoc = {
+          category: typeSay === 'ask' ? 'question' : 'activity',
+          description: description,
+          summary: description,
+          timestamp: new Date(),
+          cleared: form.cleared || '',
+          type: 'discussion',
+          sourceType: typeSay || 'tell',
+        };
+        const activityLogRef = await addDoc(
+          collection(db, `Users/${user.uid}/ActivityLog`),
+          activityLogDoc
+        );
+        await updateDoc(ref, { activityLogs: [activityLogRef.id] });
+      }
+
       setEditingId(null);
       setForm({});
       fetchDiscussions();
@@ -209,6 +261,65 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
     }
   };
 
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<string>('');
+
+  // Retroactively create ActivityLog entries for discussions that are missing them
+  const handleBackfill = async () => {
+    if (!user) return;
+    setBackfilling(true);
+    setBackfillResult('');
+    let created = 0;
+    let skipped = 0;
+    try {
+      const querySnapshot = await getDocs(collection(db, `Users/${user.uid}/Discussions`));
+      for (const discussionDoc of querySnapshot.docs) {
+        const data = discussionDoc.data();
+        const existingLogs: string[] = Array.isArray(data.activityLogs) ? data.activityLogs : [];
+        if (existingLogs.length > 0) {
+          skipped++;
+          continue; // already has a linked ActivityLog
+        }
+        const description = data.description || '';
+        const typeSay = data.typeSay || 'tell';
+        // Resolve timestamp to a real Date
+        let ts: Date = new Date();
+        if (data.timestamp && data.timestamp.toDate) {
+          ts = data.timestamp.toDate();
+        } else if (data.timestamp instanceof Date) {
+          ts = data.timestamp;
+        } else if (typeof data.timestamp === 'string' || typeof data.timestamp === 'number') {
+          const parsed = new Date(data.timestamp);
+          if (!isNaN(parsed.getTime())) ts = parsed;
+        }
+        // Create the ActivityLog entry
+        const activityLogRef = await addDoc(
+          collection(db, `Users/${user.uid}/ActivityLog`),
+          {
+            category: typeSay === 'ask' ? 'question' : 'activity',
+            description: description,
+            summary: description,
+            timestamp: ts,
+            cleared: data.cleared || '',
+            type: 'discussion',
+            sourceType: typeSay,
+          }
+        );
+        // Link it back on the discussion
+        await updateDoc(doc(db, `Users/${user.uid}/Discussions`, discussionDoc.id), {
+          activityLogs: [activityLogRef.id],
+        });
+        created++;
+      }
+      setBackfillResult(`✅ Done! Created ${created} new Activity Log entries. (${skipped} already had entries)`);
+      fetchDiscussions();
+    } catch (err) {
+      setBackfillResult('❌ Error during backfill. Check the console.');
+      console.error(err);
+    }
+    setBackfilling(false);
+  };
+
   // Only render the fields shown in the backup
   const backupFields = [
     'description',
@@ -223,6 +334,34 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Discussions Table</h2>
       {!user && <div style={{ color: 'salmon', marginBottom: 12 }}>Please sign in to view your discussions.</div>}
       {formError && <div style={{ color: 'red', marginBottom: 8 }}>{formError}</div>}
+
+      {/* Backfill Button */}
+      {user && (
+        <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={handleBackfill}
+            disabled={backfilling}
+            style={{
+              padding: '10px 28px',
+              borderRadius: 8,
+              background: backfilling ? '#a0aec0' : '#38a169',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 15,
+              border: 'none',
+              cursor: backfilling ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {backfilling ? '⏳ Creating Activity Log entries...' : '🔄 Backfill Activity Logs from Discussions'}
+          </button>
+          {backfillResult && (
+            <div style={{ fontSize: 14, color: backfillResult.startsWith('✅') ? '#276749' : '#c53030', fontWeight: 600 }}>
+              {backfillResult}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Add/Edit Form */}
       {user && (
         <form onSubmit={editingId ? handleUpdate : handleAdd} style={{ display: 'flex', gap: 12, marginBottom: 18, alignItems: 'center', flexWrap: 'wrap', background: '#f7fafc', padding: 12, borderRadius: 8 }}>

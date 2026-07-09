@@ -3,6 +3,7 @@ import { db } from './firebaseConfig';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { ExpertDataDialog } from './ExpertDataDialog';
+import { logEvent } from './analytics';
 
 interface ExpertTokenViewProps { user: User | null; }
 
@@ -59,8 +60,15 @@ export const ExpertTokenView: React.FC<ExpertTokenViewProps> = ({ user }) => {
       });
 
       setDialogOpen(true);
+      logEvent('share_token_opened', {
+        categories_count: Array.isArray((tokenDoc as any).categories) ? (tokenDoc as any).categories.length : 0,
+      });
     } catch (e: any) {
       setError(e.message || 'Error looking up token.');
+      logEvent('exception', {
+        description: 'share_token_lookup_failed',
+        fatal: false,
+      });
     }
     setLoading(false);
   };

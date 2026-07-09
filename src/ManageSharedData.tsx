@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from './firebaseConfig';
-import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
 export default function ManageSharedData({ userId }: { userId: string }) {
   const [tokens, setTokens] = useState<any[]>([]);
@@ -28,11 +28,6 @@ export default function ManageSharedData({ userId }: { userId: string }) {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to revoke this share?')) return;
     await deleteDoc(doc(db, 'share_tokens', id));
-    fetchTokens();
-  };
-
-  const handleUpdate = async (id: string, updates: any) => {
-    await updateDoc(doc(db, 'share_tokens', id), updates);
     fetchTokens();
   };
 

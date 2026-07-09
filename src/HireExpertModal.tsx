@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function HireExpertModal({ expert, onClose, onHired }: { expert: any, onClose: () => void, onHired: (isFree: boolean) => void }) {
   const [accepted, setAccepted] = useState(false);

@@ -4,6 +4,7 @@ import { db } from './firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import { logEvent } from './analytics';
 
 export interface ActivityLogRow {
   id: string;
@@ -49,6 +50,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         type: form.type || '',
       };
       await addDoc(collection(db, `Users/${user.uid}/ActivityLog`), newDoc);
+      logEvent('activity_created', {
+        category: newDoc.category,
+        type: newDoc.type,
+      });
       setForm({});
       fetchActivityLogs();
     } catch (err) {
@@ -78,6 +83,10 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         // Don't update timestamp here
       };
       await updateDoc(ref, updatedDoc);
+      logEvent('activity_updated', {
+        category: updatedDoc.category,
+        type: updatedDoc.type,
+      });
       setEditingId(null);
       setForm({});
       fetchActivityLogs();
@@ -92,6 +101,7 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
     if (!window.confirm('Delete this activity log?')) return;
     try {
       await deleteDoc(doc(db, `Users/${user.uid}/ActivityLog`, id));
+      logEvent('activity_deleted');
       fetchActivityLogs();
     } catch (err) {
       alert('Failed to delete activity log.');
@@ -209,9 +219,9 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 32 }}>
       <h2 style={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2rem', marginBottom: 16, color: '#2d3748', letterSpacing: '0.03em' }}>Activity Log Table</h2>
       <button
-        style={{ marginBottom: 16, padding: '8px 20px', borderRadius: 8, background: '#3182ce', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
         onClick={() => setShowExportModal(true)}
-      >Ask & Export</button>
+        style={{ marginBottom: 16, padding: '8px 20px', borderRadius: 8, background: '#3182ce', color: '#fff', border: 'none', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
+      >Ask &amp; Export</button>
       <AskExportModal
         activityLogs={activityLogs}
         open={showExportModal}

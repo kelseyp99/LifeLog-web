@@ -1,242 +1,175 @@
 import React, { useEffect, useState } from 'react';
-
-import ShareToken from './ShareToken';
-import HireExpertModal from './HireExpertModal';
 import { db } from './firebaseConfig';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
+import { ShareToken } from './ShareToken';
+import { logGenerateLead, logSearch, logSelectContent } from './analytics';
 
-type Expert = {
-  name: string;
-  type: string;
-  specialty: string;
-  pricePerReview: number;
-  bio?: string;
-  avatarEmoji?: string;
-  contactEmail?: string;
-  website?: string;
-  isFirestore?: boolean;
-};
-
-const EXPERT_TYPES = ['Dietitian', 'Therapist', 'Coach', 'Trainer', 'Other'];
+interface DietitianListProps {
+  user: User | null;
+}
 
 const DEMO_EXPERTS = [
-  { name: 'Alice',   title: 'Dietitian',  specialties: 'Nutrition',        costPerReview: '$15', avatarEmoji: '👩‍⚕️' },
-  { name: 'Bob',     title: 'Therapist',  specialties: 'CBT',              costPerReview: '$20', avatarEmoji: '🧠' },
-  { name: 'Carlos',  title: 'Coach',      specialties: 'Life Coaching',    costPerReview: '$10', avatarEmoji: '👨‍💼' },
-  { name: 'Diana',   title: 'Dietitian',  specialties: 'Sports Nutrition', costPerReview: '$18', avatarEmoji: '🥗' },
-  { name: 'Eve',     title: 'Trainer',    specialties: 'Fitness',          costPerReview: '$12', avatarEmoji: '🏋️' },
-  { name: 'Frank',   title: 'Coach',      specialties: 'Career',           costPerReview: '$14', avatarEmoji: '👨‍💼' },
-  { name: 'Grace',   title: 'Therapist',  specialties: 'Family Therapy',   costPerReview: '$22', avatarEmoji: '🧑‍⚕️' },
-  { name: 'Heidi',   title: 'Dietitian',  specialties: 'Pediatrics',       costPerReview: '$16', avatarEmoji: '👩‍⚕️' },
-  { name: 'Ivan',    title: 'Other',      specialties: 'Wellness',         costPerReview: '$8',  avatarEmoji: '🧘' },
-  { name: 'Judy',    title: 'Trainer',    specialties: 'Yoga',             costPerReview: '$11', avatarEmoji: '🧘' },
-  { name: 'Karl',    title: 'Dietitian',  specialties: 'Diabetes',         costPerReview: '$17', avatarEmoji: '💊' },
-  { name: 'Liam',    title: 'Coach',      specialties: 'Executive',        costPerReview: '$19', avatarEmoji: '👨‍💼' },
-  { name: 'Mallory', title: 'Therapist',  specialties: 'Trauma',           costPerReview: '$25', avatarEmoji: '🧠' },
-  { name: 'Niaj',    title: 'Other',      specialties: 'Mindfulness',      costPerReview: '$9',  avatarEmoji: '🧘' },
-  { name: 'Olivia',  title: 'Dietitian',  specialties: 'Weight Loss',      costPerReview: '$13', avatarEmoji: '👩‍⚕️' },
-  { name: 'Peggy',   title: 'Coach',      specialties: 'Relationships',    costPerReview: '$12', avatarEmoji: '👩‍💼' },
-  { name: 'Quentin', title: 'Trainer',    specialties: 'Strength',         costPerReview: '$15', avatarEmoji: '🏋️' },
-  { name: 'Rupert',  title: 'Therapist',  specialties: 'Anxiety',          costPerReview: '$21', avatarEmoji: '🧠' },
-  { name: 'Sybil',   title: 'Dietitian',  specialties: 'Geriatrics',       costPerReview: '$16', avatarEmoji: '👩‍⚕️' },
-  { name: 'Trent',   title: 'Other',      specialties: 'Sleep',            costPerReview: '$10', avatarEmoji: '👤' },
-  { name: 'Uma',     title: 'Dietitian',  specialties: 'Digestive Health', costPerReview: '$18', avatarEmoji: '🥗' },
-  { name: 'Victor',  title: 'Coach',      specialties: 'Motivation',       costPerReview: '$11', avatarEmoji: '👨‍💼' },
-  { name: 'Walter',  title: 'Trainer',    specialties: 'Cardio',           costPerReview: '$13', avatarEmoji: '🏋️' },
-  { name: 'Xavier',  title: 'Therapist',  specialties: 'Depression',       costPerReview: '$23', avatarEmoji: '🧠' },
-  { name: 'Yvonne',  title: 'Dietitian',  specialties: 'Prenatal',         costPerReview: '$17', avatarEmoji: '👩‍⚕️' },
-  { name: 'Zara',    title: 'Coach',      specialties: 'Wellness',         costPerReview: '$10', avatarEmoji: '🧘' },
+  { id: 'static_1', isExpert: true, name: 'Dr. Sarah Johnson', title: 'Registered Dietitian', bio: 'Specializing in plant-based nutrition and weight management with 12 years of experience.', specialties: 'Nutrition,Weight Loss,Plant-Based', costPerReview: '$45', avatarEmoji: '👩‍⚕️', contactEmail: 'sarah@example.com', website: '' },
+  { id: 'static_2', isExpert: true, name: 'Dr. Michael Chen', title: 'Sports Nutritionist', bio: 'Helping athletes optimize performance through evidence-based nutrition strategies.', specialties: 'Sports Nutrition,Performance,Recovery', costPerReview: '$60', avatarEmoji: '🏋️', contactEmail: 'michael@example.com', website: '' },
+  { id: 'static_3', isExpert: true, name: 'Dr. Emily Rodriguez', title: 'Sleep Specialist', bio: 'Board-certified sleep medicine physician focused on improving sleep quality and health outcomes.', specialties: 'Sleep,Insomnia,Circadian Rhythm', costPerReview: 'Free', avatarEmoji: '🧠', contactEmail: 'emily@example.com', website: '' },
+  { id: 'static_4', isExpert: true, name: 'Dr. James Wilson', title: 'Cardiologist', bio: 'Preventive cardiology specialist helping patients reduce cardiovascular risk through lifestyle changes.', specialties: 'Heart Health,Cholesterol,Hypertension', costPerReview: '$80', avatarEmoji: '🫀', contactEmail: 'james@example.com', website: '' },
+  { id: 'static_5', isExpert: true, name: 'Dr. Lisa Park', title: 'Endocrinologist', bio: 'Diabetes and metabolic health specialist with a focus on reversing type 2 diabetes.', specialties: 'Diabetes,Thyroid,Metabolic Health', costPerReview: '$70', avatarEmoji: '💊', contactEmail: 'lisa@example.com', website: '' },
+  { id: 'static_6', isExpert: true, name: 'Dr. Tom Bradley', title: 'Wellness Coach', bio: 'Holistic health coach integrating mind-body practices for sustainable wellness.', specialties: 'Wellness,Stress,Mindfulness', costPerReview: 'Free', avatarEmoji: '🧘', contactEmail: 'tom@example.com', website: '' },
 ];
 
-const ExpertList: React.FC = () => {
-  const [experts, setExperts] = useState<Expert[]>([]);
-  const [sortAsc, setSortAsc] = useState<boolean>(true);
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [search, setSearch] = useState<string>('');
-  const [view, setView] = useState<'table' | 'tile'>('table');
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [expertToShare, setExpertToShare] = useState<Expert | null>(null);
-  const [showHireModal, setShowHireModal] = useState(false);
-  const [readyToShare, setReadyToShare] = useState(false);
-  const [seeding, setSeeding] = useState(false);
+function isFree(cost: string) {
+  if (!cost) return true;
+  const c = cost.trim().toLowerCase().replace(/\$/g, '');
+  return c === '' || c === '0' || c === 'free';
+}
 
-  const loadExperts = async () => {
+export const DietitianList: React.FC<DietitianListProps> = ({ user }) => {
+  const [experts, setExperts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [specFilter, setSpecFilter] = useState('__ALL__');
+  const [seeding, setSeeding] = useState(false);
+  const [selectedExpert, setSelectedExpert] = useState<any>(null);
+
+  useEffect(() => {
+    fetchExperts();
+  }, []);
+
+  const fetchExperts = async () => {
+    setLoading(true);
     try {
       const snap = await getDocs(collection(db, 'experts'));
-      const loaded: Expert[] = [];
-      snap.forEach(d => {
-        const data = d.data();
-        if (!data.isExpert) return;
-        let price = 0;
-        if (data.costPerReview) {
-          const cleaned = data.costPerReview.toString().replace(/[^0-9.]/g, '');
-          price = cleaned ? parseFloat(cleaned) : 0;
-        }
-        loaded.push({
-          name: data.name || 'Unknown',
-          type: data.title || 'Other',
-          specialty: data.specialties || '',
-          pricePerReview: price,
-          bio: data.bio || '',
-          avatarEmoji: data.avatarEmoji || '👤',
-          contactEmail: data.contactEmail || '',
-          website: data.website || '',
-          isFirestore: true,
-        });
-      });
-      setExperts(loaded);
-    } catch (e) {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter((e: any) => e.isExpert);
+      setExperts(data);
+    } catch {
       setExperts([]);
     }
+    setLoading(false);
   };
-
-  useEffect(() => { loadExperts(); }, []);
 
   const handleSeedDemoExperts = async () => {
     setSeeding(true);
-    try {
-      for (const e of DEMO_EXPERTS) {
-        const id = `static_${e.name.toLowerCase()}`;
-        await setDoc(doc(db, 'experts', id), { ...e, isExpert: true, bio: '', contactEmail: '', website: '', uid: id });
-      }
-      await loadExperts();
-    } catch (err) {
-      alert('Seeding failed — make sure you are signed in.');
+    for (const e of DEMO_EXPERTS) {
+      await setDoc(doc(db, 'experts', e.id), e);
     }
+    await fetchExperts();
     setSeeding(false);
   };
 
-  const filteredExperts = React.useMemo(() => {
-    let filtered = experts;
-    if (typeFilter) {
-      filtered = filtered.filter(e => e.type === typeFilter);
-    }
-    if (search.trim()) {
-      const s = search.trim().toLowerCase();
-      filtered = filtered.filter(e =>
-        e.name.toLowerCase().includes(s) ||
-        e.specialty.toLowerCase().includes(s)
-      );
-    }
-    return filtered;
-  }, [experts, typeFilter, search]);
+  const allSpecialties = Array.from(new Set(
+    experts.flatMap((e: any) => (e.specialties || '').split(',').map((s: string) => s.trim()).filter(Boolean))
+  )) as string[];
 
-  const sortedExperts = React.useMemo(() => {
-    const sorted = [...filteredExperts].sort((a, b) =>
-      sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+  const filtered = experts.filter((e: any) => {
+    const matchSearch = !search || e.name?.toLowerCase().includes(search.toLowerCase()) || e.bio?.toLowerCase().includes(search.toLowerCase());
+    const matchSpec = specFilter === '__ALL__' || (e.specialties || '').includes(specFilter);
+    return matchSearch && matchSpec;
+  });
+
+  useEffect(() => {
+    if (!search.trim()) return;
+    const timeout = window.setTimeout(() => {
+      logSearch(search.trim(), 'expert_directory');
+    }, 600);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
+
+  // If an expert is selected, show ShareToken for that expert
+  if (selectedExpert) {
+    return (
+      <div style={{ maxWidth: 700, margin: '32px auto', padding: '0 16px', fontFamily: 'sans-serif' }}>
+        <button onClick={() => setSelectedExpert(null)}
+          style={{ marginBottom: 20, padding: '8px 18px', borderRadius: 8, background: '#e2e8f0', border: 'none', fontWeight: 700, cursor: 'pointer', color: '#4a5568' }}>
+          ← Back to Experts
+        </button>
+        <div style={{ background: '#ebf8ff', border: '2px solid #bee3f8', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ fontSize: 48 }}>{selectedExpert.avatarEmoji || '👤'}</div>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 20, color: '#1a365d' }}>{selectedExpert.name}</div>
+            <div style={{ color: '#3182ce', fontWeight: 600, fontSize: 14 }}>{selectedExpert.title}</div>
+            {isFree(selectedExpert.costPerReview)
+              ? <span style={{ background: '#c6f6d5', color: '#276749', fontWeight: 800, fontSize: 13, borderRadius: 8, padding: '3px 10px', marginTop: 4, display: 'inline-block' }}>🎁 Free</span>
+              : <span style={{ background: '#fefcbf', color: '#744210', fontWeight: 800, fontSize: 13, borderRadius: 8, padding: '3px 10px', marginTop: 4, display: 'inline-block' }}>{selectedExpert.costPerReview} / review</span>
+            }
+          </div>
+        </div>
+        {!user
+          ? <div style={{ padding: '20px 24px', background: '#fff5f5', border: '2px solid #fc8181', borderRadius: 12, color: '#c53030', fontWeight: 700, textAlign: 'center' }}>
+              🔒 You must be signed in to share your data with an expert.<br />
+              <span style={{ fontWeight: 400, fontSize: 13 }}>Use the Sign in with Google button at the top of the page.</span>
+            </div>
+          : <ShareToken user={user} preselectedExpert={selectedExpert} />
+        }
+      </div>
     );
-    return sorted;
-  }, [filteredExperts, sortAsc]);
+  }
 
   return (
-  <div className="expert-list">
-      <h2>Experts</h2>
-      {experts.length === 0 && !seeding && (
-        <div style={{ marginBottom: 16, padding: '12px 16px', background: '#fffbea', border: '1px solid #f6e05e', borderRadius: 8 }}>
-          <span style={{ color: '#744210', fontSize: 14 }}>No experts found in database. </span>
-          <button onClick={handleSeedDemoExperts} style={{ marginLeft: 8, padding: '4px 14px', borderRadius: 6, background: '#3182ce', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-            Seed Demo Experts
+    <div style={{ maxWidth: 900, margin: '32px auto', padding: '0 16px', fontFamily: 'sans-serif' }}>
+      <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#2d3748', marginBottom: 4 }}>🏥 Expert Directory</h2>
+      <p style={{ color: '#718096', marginBottom: 20, fontSize: 14 }}>Browse certified experts and share your data securely.</p>
+
+      {/* Search + filter */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or keyword…"
+          style={{ flex: 1, minWidth: 180, padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }} />
+        <select value={specFilter} onChange={e => setSpecFilter(e.target.value)}
+          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}>
+          <option value="__ALL__">All Specialties</option>
+          {allSpecialties.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      {loading && <div style={{ textAlign: 'center', padding: 40, color: '#a0aec0' }}>Loading experts…</div>}
+
+      {!loading && experts.length === 0 && (
+        <div style={{ background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 12, padding: 24, textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, color: '#744210', marginBottom: 8 }}>No experts found in the directory.</div>
+          <button onClick={handleSeedDemoExperts} disabled={seeding}
+            style={{ padding: '10px 24px', borderRadius: 8, background: '#d69e2e', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', opacity: seeding ? 0.7 : 1 }}>
+            {seeding ? '⏳ Seeding…' : '🌱 Seed Demo Experts'}
           </button>
         </div>
       )}
-      {seeding && <div style={{ marginBottom: 12, color: '#3182ce', fontWeight: 600 }}>⏳ Seeding demo experts into Firestore…</div>}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc' }}>
-          <option value="">All Types</option>
-          {EXPERT_TYPES.map(type => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          placeholder="Search by name or specialty..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ padding: 6, borderRadius: 4, border: '1px solid #ccc', minWidth: 180 }}
-        />
-        <button
-          style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #ccc', cursor: 'pointer' }}
-          onClick={() => setSortAsc((asc) => !asc)}
-        >
-          Sort: {sortAsc ? 'A → Z' : 'Z → A'}
-        </button>
-        <button
-          style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #3182ce', background: view === 'table' ? '#3182ce' : '#fff', color: view === 'table' ? '#fff' : '#3182ce', cursor: 'pointer', fontWeight: 600 }}
-          onClick={() => setView('table')}
-        >Table View</button>
-        <button
-          style={{ padding: '4px 12px', borderRadius: 4, border: '1px solid #3182ce', background: view === 'tile' ? '#3182ce' : '#fff', color: view === 'tile' ? '#fff' : '#3182ce', cursor: 'pointer', fontWeight: 600 }}
-          onClick={() => setView('tile')}
-        >Tile View</button>
-      </div>
-      {view === 'table' ? (
-        <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #eee', borderRadius: 8, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ position: 'sticky', top: 0, background: '#f7fafc', zIndex: 10, padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', borderTop: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>Name</th>
-                <th style={{ position: 'sticky', top: 0, background: '#f7fafc', zIndex: 10, padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', borderTop: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>Price</th>
-                <th style={{ position: 'sticky', top: 0, background: '#f7fafc', zIndex: 10, padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', borderTop: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>Type</th>
-                <th style={{ position: 'sticky', top: 0, background: '#f7fafc', zIndex: 10, padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', borderTop: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>Specialty</th>
-                <th style={{ position: 'sticky', top: 0, background: '#f7fafc', zIndex: 10, padding: '12px 24px', fontWeight: 600, color: '#4a5568', fontSize: 16, borderBottom: '2px solid #e2e8f0', textAlign: 'center', letterSpacing: '0.02em', borderTop: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.03)' }}>Share</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedExperts.map((e, index) => (
-                <tr key={index} style={{ background: index % 2 === 0 ? '#f9fafb' : '#fff' }}>
-                  <td style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>{e.name}</td>
-                  <td style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>${e.pricePerReview} per review</td>
-                  <td style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>{e.type}</td>
-                  <td style={{ padding: '10px 20px', textAlign: 'center', color: '#2d3748', fontSize: 15, borderBottom: '1px solid #e2e8f0' }}>{e.specialty}</td>
-                  <td style={{ padding: '10px 20px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>
-                    <button style={{ padding: '4px 10px', borderRadius: 4, background: '#3182ce', color: '#fff', border: 'none', cursor: 'pointer', marginRight: 8 }}
-                      onClick={() => { setExpertToShare(e); setShowHireModal(true); }}>
-                      Hire
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, maxHeight: 320, overflowY: 'auto', border: '1px solid #eee', borderRadius: 8, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', padding: 16 }}>
-          {sortedExperts.map((e, index) => (
-            <div key={index} style={{ minWidth: 180, maxWidth: 220, flex: '1 0 180px', background: '#f7fafc', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid #e2e8f0' }}>
-              <div style={{ fontWeight: 700, fontSize: 18, color: '#2d3748', marginBottom: 6 }}>{e.name}</div>
-              <div style={{ fontWeight: 600, fontSize: 16, color: '#3182ce', margin: '8px 0' }}>${e.pricePerReview} per review</div>
-              <div style={{ fontWeight: 500, fontSize: 15, color: '#3182ce', marginBottom: 2 }}>{e.type}</div>
-              <div style={{ fontSize: 14, color: '#4a5568' }}>{e.specialty}</div>
-              <button style={{ marginTop: 4, padding: '4px 10px', borderRadius: 4, background: '#3182ce', color: '#fff', border: 'none', cursor: 'pointer' }}
-                onClick={() => { setExpertToShare(e); setShowHireModal(true); }}>
-                Hire
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 16 }}>
+        {filtered.map((e: any) => (
+          <div key={e.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 42, lineHeight: 1 }}>{e.avatarEmoji || '👤'}</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: '#1a365d' }}>{e.name}</div>
+                <div style={{ fontSize: 13, color: '#3182ce', fontWeight: 600 }}>{e.title}</div>
+              </div>
+            </div>
+            <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.5, margin: 0, flexGrow: 1 }}>{e.bio}</p>
+            {e.specialties && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {e.specialties.split(',').map((s: string) => s.trim()).filter(Boolean).map((s: string) => (
+                  <span key={s} style={{ background: '#ebf8ff', color: '#2b6cb0', fontSize: 11, fontWeight: 700, borderRadius: 20, padding: '2px 10px' }}>{s}</span>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+              {isFree(e.costPerReview)
+                ? <span style={{ background: '#c6f6d5', color: '#276749', fontWeight: 800, fontSize: 13, borderRadius: 8, padding: '4px 12px' }}>🎁 Free</span>
+                : <span style={{ background: '#fefcbf', color: '#744210', fontWeight: 700, fontSize: 13, borderRadius: 8, padding: '4px 12px' }}>{e.costPerReview} / review</span>
+              }
+              <button onClick={() => {
+                setSelectedExpert(e);
+                logSelectContent('expert', e.id || e.name || 'expert');
+                logGenerateLead('expert_hire_intent', Number.parseFloat(String(e.costPerReview || '').replace(/[^0-9.]/g, '')) || undefined);
+              }}
+                style={{ padding: '8px 16px', borderRadius: 8, background: '#3182ce', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                Hire 🔗
               </button>
             </div>
-          ))}
-        </div>
-      )}
-      {showHireModal && expertToShare && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.2)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px #aaa', padding: 32, minWidth: 420, maxWidth: 480, position: 'relative' }}>
-            <button style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 22, color: '#888', cursor: 'pointer' }} onClick={() => setShowHireModal(false)}>&times;</button>
-            <HireExpertModal
-              expert={expertToShare}
-              onClose={() => setShowHireModal(false)}
-              onHired={() => { setShowHireModal(false); setReadyToShare(true); setShowShareDialog(true); }}
-            />
           </div>
-        </div>
-      )}
-      {showShareDialog && expertToShare && readyToShare && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.2)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px #aaa', padding: 32, minWidth: 420, maxWidth: 480, position: 'relative' }}>
-            <button style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 22, color: '#888', cursor: 'pointer' }} onClick={() => { setShowShareDialog(false); setReadyToShare(false); }}>&times;</button>
-            <ShareToken userId={"demoUser"} preselectedExpert={expertToShare.name} />
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 };
 
-export default ExpertList;
+export default DietitianList;

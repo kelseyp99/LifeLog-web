@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import { logGenerateLead, logSelectContent } from './analytics';
 
 interface ExpertProfileProps {
   user: User | null;
@@ -77,6 +78,10 @@ export const ExpertProfile: React.FC<ExpertProfileProps> = ({ user }) => {
     }
     setSaving(false);
     setSaved(true);
+    logSelectContent('expert_profile', profile.isExpert ? 'enabled' : 'disabled');
+    if (profile.isExpert) {
+      logGenerateLead('expert_profile_saved');
+    }
     setTimeout(() => setSaved(false), 3000);
   };
 

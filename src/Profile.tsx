@@ -157,6 +157,14 @@ export const Profile: React.FC<ProfileProps> = ({ user }) => {
     }
   };
 
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', marginTop: 32, color: '#a0aec0' }}>
+        Loading profile...
+      </div>
+    );
+  }
+
   if (!profile && !editMode) {
     return (
       <div style={{ textAlign: 'center', marginTop: 32, color: '#a0aec0' }}>
