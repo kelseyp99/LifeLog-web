@@ -80,7 +80,11 @@ import './App.css'
 import lifeLinkLog from './assets/LifeLinkLog.png';
 import Home from './Home';
 import AskAndLog from './AskAndLog';
+import GetApp from './GetApp';
 import { ExpertProfile } from './ExpertProfile';
+import { SeoLandingPage } from './SeoLandingPage';
+import { SEO_PAGE_LINKS, SEO_PAGE_PATHS } from './seoPages';
+import type { SeoPageKey } from './seoPages';
 import {
   logEvent,
   logLogin,
@@ -88,11 +92,25 @@ import {
   logSelectContent,
   logSignUp,
   setAnalyticsUser,
+  trackOnboardingStarted,
 } from './analytics';
 
+const pageToPath: Record<string, string> = {
+  home: '/',
+  about: '/about',
+  getApp: '/get-the-app',
+};
+
+function pageFromPath(pathname: string): string {
+  const seoPage = SEO_PAGE_PATHS[pathname];
+  if (seoPage) return `seo:${seoPage}`;
+  if (pathname === '/about') return 'about';
+  if (pathname === '/get-the-app') return 'getApp';
+  return 'home';
+}
 
 function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(() => pageFromPath(window.location.pathname));
   const [user, setUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showUserDataMenu, setShowUserDataMenu] = useState(false);
@@ -113,8 +131,17 @@ function App() {
     logScreenView(page);
   }, [page]);
 
-  const goToPage = (nextPage: string) => {
+  useEffect(() => {
+    const handlePopState = () => setPage(pageFromPath(window.location.pathname));
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const goToPage = (nextPage: string, path = pageToPath[nextPage]) => {
     setPage(nextPage);
+    if (path && window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
     logSelectContent('navigation', nextPage);
   };
 
@@ -124,6 +151,7 @@ function App() {
       const isNewUser = credential.user.metadata.creationTime === credential.user.metadata.lastSignInTime;
       if (isNewUser) {
         logSignUp('Google');
+        trackOnboardingStarted();
       } else {
         logLogin('Google');
       }
@@ -213,11 +241,13 @@ function App() {
             <button onClick={() => goToPage('manageshared')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Manage Shared</button>
             <button onClick={() => goToPage('expertview')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Expert View</button>
             {user && <button onClick={() => goToPage('expertprofile')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Expert Profile</button>}
+            <button onClick={() => goToPage('getApp')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>Get the App</button>
             <button onClick={() => goToPage('about')} style={{ color: '#333', background: 'none', border: 'none', textDecoration: 'none', padding: '4px 12px', borderRadius: 4, fontSize: 'inherit', fontWeight: 'inherit', cursor: 'pointer' }}>About</button>
         </nav>
         <SponsorBanner />
         <div style={{ flex: 1, minWidth: 0, maxWidth: 700, margin: '0 auto', width: '100%' }}>
           {page === 'home' && <Home />}
+          {page === 'getApp' && <GetApp />}
           {page === 'askandlog' && <AskAndLog />}
           {page === 'about' && <About />}
           {page === 'dietitians' && <ExpertList user={user} />}
@@ -230,6 +260,23 @@ function App() {
           {page === 'manageshared' && user && <ManageSharedData userId={user.uid} />}
           {page === 'expertview' && <ExpertTokenView user={user} />}
           {page === 'expertprofile' && <ExpertProfile user={user} />}
+          {page.startsWith('seo:') && <SeoLandingPage pageKey={page.slice(4) as SeoPageKey} />}
+          {page === 'home' && (
+            <div style={{ padding: '0 16px 40px', fontFamily: 'sans-serif' }}>
+              <h2 style={{ color: '#1a365d', fontSize: 18 }}>LifeLog guides</h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {SEO_PAGE_LINKS.map((link) => (
+                  <button
+                    key={link.path}
+                    onClick={() => goToPage(`seo:${link.key}`, link.path)}
+                    style={{ border: '1px solid #cbd5e1', background: '#fff', borderRadius: 8, padding: '8px 12px', color: '#2d3748', cursor: 'pointer' }}
+                  >
+                    {link.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

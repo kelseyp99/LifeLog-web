@@ -9,7 +9,7 @@ interface ShareTokenProps {
 }
 
 import { auth } from './firebaseConfig';
-import { logGenerateLead, logShare } from './analytics';
+import { logGenerateLead, trackShare } from './analytics';
 
 const MAX_QUESTION = 500;
 
@@ -74,7 +74,7 @@ export const ShareToken: React.FC<ShareTokenProps> = ({ user: userProp, preselec
     });
     setGeneratedToken(token);
     logGenerateLead('share_token_created');
-    logShare('secure_token', 'health_data_access', selectedExpert.id || 'expert');
+    trackShare('health_data_access');
     setQuestion('');
     fetchTokens();
     setLoading(false);

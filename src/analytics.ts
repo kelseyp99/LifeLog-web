@@ -1,4 +1,17 @@
 type AnalyticsParams = Record<string, unknown>;
+type LogType = 'general' | 'food' | 'activity' | 'health_note' | 'note';
+type PremiumClickLocation = 'home_page' | 'pricing_page' | 'dashboard' | 'modal' | 'settings' | string;
+
+type PlanParams = {
+  plan_id?: string;
+  price?: number;
+  currency?: string;
+};
+
+type PurchaseParams = PlanParams & {
+  transaction_id?: string;
+  value?: number;
+};
 
 declare global {
   interface Window {
@@ -7,6 +20,19 @@ declare global {
 }
 
 export const GTM_ID = import.meta.env.NEXT_PUBLIC_GTM_ID || '';
+export const ANALYTICS_PLATFORM = 'web';
+export const APP_VERSION = import.meta.env.NEXT_PUBLIC_APP_VERSION || import.meta.env.VITE_APP_VERSION || '';
+export const KEY_EVENTS = [
+  'sign_up',
+  'onboarding_completed',
+  'log_created',
+  'ai_summary_requested',
+  'premium_click',
+  'trial_started',
+  'begin_checkout',
+  'subscription_started',
+  'purchase',
+] as const;
 
 let gtmInitialized = false;
 let lastPageViewKey = '';
@@ -55,7 +81,7 @@ export function logEvent(eventName: string, params: AnalyticsParams = {}) {
 export function trackEvent(eventName: string, params: AnalyticsParams = {}) {
   if (shouldSuppressAnalytics()) return;
   initAnalytics();
-  pushDataLayer(eventName, params);
+  pushDataLayer(eventName, withPlatform(params));
 }
 
 export function logScreenView(screenName: string) {
@@ -92,7 +118,7 @@ export function logSignUp(method = 'Google') {
 }
 
 export function logSearch(searchTerm: string, source: string) {
-  logEvent('search', { search_term: searchTerm, source });
+  logEvent('search', { search_term_length: searchTerm.length, source });
 }
 
 export function logSelectContent(contentType: string, contentId: string) {
@@ -128,12 +154,25 @@ function cleanParams(params: AnalyticsParams) {
   );
 }
 
+function withPlatform(params: AnalyticsParams = {}) {
+  return {
+    platform: ANALYTICS_PLATFORM,
+    ...params,
+  };
+}
+
 export function pushDataLayer(event: string, params: AnalyticsParams = {}) {
   if (typeof window === 'undefined') return;
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({
     event,
     ...cleanParams(params),
+  });
+}
+
+export function trackAppOpen() {
+  trackEvent('app_open', {
+    app_version: APP_VERSION || undefined,
   });
 }
 
@@ -149,12 +188,14 @@ export function trackOnboardingStarted() {
   trackEvent('onboarding_started');
 }
 
+// TODO: Wire completion, premium CTA, reminder, account deletion, trial, checkout,
+// subscription, purchase, and cancellation helpers from real product flows once those screens/routes exist.
 export function trackOnboardingCompleted() {
   trackEvent('onboarding_completed');
 }
 
-export function trackLogCreated() {
-  trackEvent('log_created');
+export function trackLogCreated(logType: LogType = 'general') {
+  trackEvent('log_created', { log_type: logType });
 }
 
 export function trackNoteCreated() {
@@ -173,48 +214,51 @@ export function trackHealthNoteLogged() {
   trackEvent('health_note_logged');
 }
 
-export function trackAiSummaryRequested() {
-  trackEvent('ai_summary_requested');
+export function trackAiSummaryRequested(summaryType?: string) {
+  trackEvent('ai_summary_requested', { summary_type: summaryType });
 }
 
 export function trackAiResponseSaved() {
   trackEvent('ai_response_saved');
 }
 
-export function trackReminderCreated() {
-  trackEvent('reminder_created');
+export function trackReminderCreated(reminderType?: string) {
+  trackEvent('reminder_created', { reminder_type: reminderType });
 }
 
-export function trackShare() {
-  trackEvent('share');
+export function trackShare(contentType = 'content') {
+  trackEvent('share', { content_type: contentType });
 }
 
 export function trackDeleteAccount() {
   trackEvent('delete_account');
 }
 
-export function trackPremiumClick() {
-  trackEvent('premium_click');
+export function trackPremiumClick(location: PremiumClickLocation = 'dashboard') {
+  trackEvent('premium_click', { location });
 }
 
-export function trackTrialStarted() {
-  trackEvent('trial_started');
+export function trackTrialStarted(plan: PlanParams = {}) {
+  trackEvent('trial_started', plan);
 }
 
-export function trackBeginCheckout() {
-  trackEvent('begin_checkout');
+export function trackBeginCheckout(plan: PlanParams = {}) {
+  trackEvent('begin_checkout', plan);
 }
 
-export function trackSubscriptionStarted() {
-  trackEvent('subscription_started');
+export function trackSubscriptionStarted(plan: PlanParams = {}) {
+  trackEvent('subscription_started', plan);
 }
 
-export function trackPurchase() {
-  trackEvent('purchase');
+export function trackPurchase(transaction: PurchaseParams = {}) {
+  trackEvent('purchase', {
+    ...transaction,
+    value: transaction.value ?? transaction.price,
+  });
 }
 
-export function trackCancelSubscription() {
-  trackEvent('cancel_subscription');
+export function trackCancelSubscription(plan: PlanParams = {}) {
+  trackEvent('cancel_subscription', plan);
 }
 
 export function shouldSuppressAnalytics() {

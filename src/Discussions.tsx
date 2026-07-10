@@ -7,6 +7,7 @@ import { db } from './firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
+import { trackActivityLogged, trackLogCreated, trackNoteCreated } from './analytics';
 
 export interface DiscussionRow {
   id: string;
@@ -68,6 +69,10 @@ export const Discussions: React.FC<DiscussionsProps> = ({ user }) => {
         collection(db, `Users/${user.uid}/ActivityLog`),
         activityLogDoc
       );
+      const logType = typeSay === 'ask' ? 'note' : 'activity';
+      trackLogCreated(logType);
+      if (logType === 'note') trackNoteCreated();
+      if (logType === 'activity') trackActivityLogged();
 
       // 2. Create the discussion with the linked ActivityLog ID
       const newDoc = {

@@ -3,7 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { AskExportIntegration } from './AskExportIntegration';
 import { auth, db } from './firebaseConfig';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
-import { logEvent, logSelectContent } from './analytics';
+import {
+  logEvent,
+  logSelectContent,
+  trackActivityLogged,
+  trackAiSummaryRequested,
+  trackLogCreated,
+} from './analytics';
 
 type HistoryItem = {
   type: 'question' | 'activity';
@@ -71,6 +77,7 @@ export default function AskAndLog() {
       setSummary('This is a summary of your question: ' + input);
       setShowSummary(true);
       setHistory((h) => [...h, { type: 'question', text: input, categories: selectedCategories, file }]);
+      trackAiSummaryRequested('ask_and_log');
       logEvent('question_asked', {
         question_length: input.length,
         category_count: selectedCategories.length,
@@ -78,6 +85,8 @@ export default function AskAndLog() {
       });
     } else {
       setHistory((h) => [...h, { type: 'activity', text: input, categories: selectedCategories }]);
+      trackLogCreated('activity');
+      trackActivityLogged();
       logEvent('activity_created', {
         category_count: selectedCategories.length,
       });

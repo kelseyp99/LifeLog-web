@@ -1,4 +1,5 @@
 import React from 'react';
+import GetApp from './GetApp';
 
 const FEATURES = [
   { emoji: '📓', title: 'Activity Log',      desc: 'Log daily health events, notes, and responses — organized by category and fully searchable.' },
@@ -40,6 +41,8 @@ const Home: React.FC = () => {
 
       {/* Feature cards */}
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px' }}>
+        <GetApp />
+
         <h2 style={{ fontWeight: 900, color: '#1a365d', fontSize: '1.25rem', marginBottom: 16 }}>What you can do</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 36 }}>
           {FEATURES.map(f => (

@@ -4,7 +4,14 @@ import { db } from './firebaseConfig';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { logEvent } from './analytics';
+import {
+  logEvent,
+  trackActivityLogged,
+  trackFoodLogged,
+  trackHealthNoteLogged,
+  trackLogCreated,
+  trackNoteCreated,
+} from './analytics';
 
 export interface ActivityLogRow {
   id: string;
@@ -50,9 +57,14 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
         type: form.type || '',
       };
       await addDoc(collection(db, `Users/${user.uid}/ActivityLog`), newDoc);
+      const logType = inferLogType(newDoc.category, newDoc.type);
+      trackLogCreated(logType);
+      if (logType === 'note') trackNoteCreated();
+      if (logType === 'food') trackFoodLogged();
+      if (logType === 'activity') trackActivityLogged();
+      if (logType === 'health_note') trackHealthNoteLogged();
       logEvent('activity_created', {
-        category: newDoc.category,
-        type: newDoc.type,
+        log_type: logType,
       });
       setForm({});
       fetchActivityLogs();
@@ -84,8 +96,8 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
       };
       await updateDoc(ref, updatedDoc);
       logEvent('activity_updated', {
-        category: updatedDoc.category,
-        type: updatedDoc.type,
+        has_category: Boolean(updatedDoc.category),
+        has_type: Boolean(updatedDoc.type),
       });
       setEditingId(null);
       setForm({});
@@ -451,3 +463,12 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ user }) => {
     </div>
   );
 };
+
+function inferLogType(category = '', type = ''): 'general' | 'food' | 'activity' | 'health_note' | 'note' {
+  const value = `${category} ${type}`.toLowerCase();
+  if (/\b(food|meal|diet|nutrition|breakfast|lunch|dinner|snack)\b/.test(value)) return 'food';
+  if (/\b(activity|exercise|workout|walk|run|cardio|strength|training)\b/.test(value)) return 'activity';
+  if (/\b(health|symptom|pain|medicine|medication|doctor|medical|mood|sleep)\b/.test(value)) return 'health_note';
+  if (/\b(note|journal|reflection)\b/.test(value)) return 'note';
+  return 'general';
+}
