@@ -1,149 +1,134 @@
-import React, { useEffect, useState } from 'react';
-import { db } from './firebaseConfig';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
-import type { User } from 'firebase/auth';
-import { ExpertDataDialog } from './ExpertDataDialog';
-import { logEvent } from './analytics';
+import {useCallback, useEffect, useState} from 'react';
+import type {User} from 'firebase/auth';
+import {ExpertDataDialog} from './ExpertDataDialog';
+import {logEvent} from './analytics';
+import {
+  callExpertWorkflow,
+  type ExpertShareSummary,
+  type ShareTokenRecord,
+  type SharedActivityRecord,
+} from './expertSharing';
 
-interface ExpertTokenViewProps { user: User | null; }
+interface ExpertTokenViewProps {
+  user: User | null;
+}
 
-const RECENT_TOKENS_KEY = 'expert_recent_tokens';
+interface SharedDataResponse {
+  share: ShareTokenRecord;
+  records: SharedActivityRecord[];
+}
 
-export const ExpertTokenView: React.FC<ExpertTokenViewProps> = ({ user }) => {
+export const ExpertTokenView = ({user}: ExpertTokenViewProps) => {
+  const [shares, setShares] = useState<ExpertShareSummary[]>([]);
   const [tokenInput, setTokenInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedToken, setSelectedToken] = useState<any>(null);
-  const [clientName, setClientName] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedShare, setSelectedShare] = useState<ShareTokenRecord | null>(null);
+  const [selectedOwnerName, setSelectedOwnerName] = useState('');
 
-  // Load from localStorage on mount
-  const [recentTokens, setRecentTokens] = useState<any[]>(() => {
-    try { return JSON.parse(localStorage.getItem(RECENT_TOKENS_KEY) || '[]'); } catch { return []; }
-  });
-
-  // Save to localStorage whenever recentTokens changes
-  useEffect(() => {
-    localStorage.setItem(RECENT_TOKENS_KEY, JSON.stringify(recentTokens));
-  }, [recentTokens]);
-
-  const lookupToken = async (tokenStr: string) => {
-    setError('');
+  const loadShares = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
+    setError('');
     try {
-      const q = query(collection(db, 'share_tokens'), where('token', '==', tokenStr.trim()), limit(1));
-      const snap = await getDocs(q);
-      if (snap.empty) { setError('Token not found.'); setLoading(false); return; }
-      const tokenDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
-
-      // Try to get client's display name from their user doc
-      let name = (tokenDoc as any).userName || (tokenDoc as any).userEmail || '';
-      if (!(tokenDoc as any).userName) {
-        try {
-          // fetch Users/{userId} doc directly
-          const { getDoc, doc } = await import('firebase/firestore');
-          const userDoc = await getDoc(doc(db, 'Users', (tokenDoc as any).userId));
-          if (userDoc.exists()) {
-            const d = userDoc.data();
-            name = d.displayName || d.name || d.firstName || d.email || d.userEmail || (tokenDoc as any).userEmail || (tokenDoc as any).userId || 'Unknown';
-          }
-        } catch {}
-      }
-
-      setClientName(name);
-      setSelectedToken(tokenDoc);
-
-      // Add to recent tokens (dedupe by token string, keep latest at top, max 20)
-      setRecentTokens(prev => {
-        const filtered = prev.filter((t: any) => t.token !== tokenStr.trim());
-        return [{ ...tokenDoc, _clientName: name }, ...filtered].slice(0, 20);
-      });
-
-      setDialogOpen(true);
-      logEvent('share_token_opened', {
-        categories_count: Array.isArray((tokenDoc as any).categories) ? (tokenDoc as any).categories.length : 0,
-      });
-    } catch (e: any) {
-      setError(e.message || 'Error looking up token.');
-      logEvent('exception', {
-        description: 'share_token_lookup_failed',
-        fatal: false,
-      });
+      const result = await callExpertWorkflow<{shares: ExpertShareSummary[]}>(
+        'listSharedWithMe'
+      );
+      setShares(result.shares);
+    } catch (caught) {
+      setError(caught instanceof Error ?
+        caught.message : 'Assigned shares could not be loaded.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    void loadShares();
+  }, [loadShares]);
+
+  const openShare = async (tokenId: string, ownerDisplayName = '') => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await callExpertWorkflow<SharedDataResponse>(
+        'getSharedData',
+        {tokenId}
+      );
+      setSelectedShare(result.share);
+      setSelectedOwnerName(ownerDisplayName ||
+        `User …${result.share.ownerUid.slice(-6)}`);
+      logEvent('share_token_opened', {
+        categories_count: result.share.categories.length,
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ?
+        caught.message : 'This share cannot be opened.');
+      await loadShares();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tokenInput.trim()) return;
-    lookupToken(tokenInput.trim());
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const tokenId = tokenInput.trim();
+    if (tokenId) void openShare(tokenId);
   };
 
-  const handleRecentClick = (t: any) => {
-    setClientName(t._clientName || t.userName || t.userEmail || '');
-    setSelectedToken(t);
-    setDialogOpen(true);
-  };
-
-  const handleRemoveRecent = (tokenStr: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setRecentTokens(prev => prev.filter((t: any) => t.token !== tokenStr));
-  };
+  if (!user) {
+    return <div style={{padding: 32}}>Sign in as an approved expert.</div>;
+  }
 
   return (
-    <div style={{ maxWidth: 700, margin: '40px auto', padding: '0 16px', fontFamily: 'sans-serif' }}>
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2d3748', marginBottom: 8 }}>🔑 Expert Token View</h2>
-      <p style={{ color: '#718096', marginBottom: 24 }}>Enter a client's share token to view their data.</p>
+    <div style={{maxWidth: 820, margin: '40px auto', padding: '0 16px', fontFamily: 'sans-serif'}}>
+      <h2 style={{fontSize: '1.8rem', fontWeight: 800, color: '#2d3748', marginBottom: 8}}>Shared With Me</h2>
+      <p style={{color: '#718096', marginBottom: 24}}>Active shares assigned to your approved expert account. Access is checked again whenever you open data, save a note, or post advice.</p>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <input
-          value={tokenInput}
-          onChange={e => setTokenInput(e.target.value)}
-          placeholder="Paste token here..."
-          style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 15 }}
-        />
-        <button type="submit" disabled={loading || !tokenInput.trim()} style={{
-          padding: '10px 22px', borderRadius: 8, background: '#3182ce', color: '#fff',
-          border: 'none', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: loading ? 0.7 : 1
-        }}>
-          {loading ? '...' : 'View Data'}
-        </button>
-      </form>
+      {error && <div style={{color: '#c53030', background: '#fff5f5', borderRadius: 8, padding: 12, marginBottom: 16, fontWeight: 600}}>{error}</div>}
+      {loading && <div style={{color: '#718096', marginBottom: 16}}>Loading…</div>}
 
-      {error && <div style={{ color: '#e53e3e', marginBottom: 16, fontWeight: 600 }}>⚠️ {error}</div>}
-
-      {recentTokens.length > 0 && (
-        <div>
-          <div style={{ fontWeight: 700, color: '#4a5568', marginBottom: 10, fontSize: 15 }}>Recent Clients</div>
-          {recentTokens.map((t: any, i: number) => (
-            <div key={t.token + '-' + i} onClick={() => handleRecentClick(t)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', marginBottom: 8, background: '#f7fafc', borderRadius: 10, border: '1px solid #e2e8f0', cursor: 'pointer', transition: 'background 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#ebf8ff')}
-              onMouseLeave={e => (e.currentTarget.style.background = '#f7fafc')}
-            >
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#2b6cb0' }}>
-                  👤 {t._clientName || t.userName || t.userEmail || t.userId || 'Unknown Client'}
-                </div>
-                <div style={{ fontSize: 12, color: '#a0aec0', marginTop: 2 }}>
-                  {(t.categories || []).join(', ')} · {t.token?.slice(0, 12)}...
-                </div>
-              </div>
-              <button onClick={e => handleRemoveRecent(t.token, e)}
-                style={{ background: 'none', border: 'none', color: '#a0aec0', fontSize: 18, cursor: 'pointer', padding: '0 4px' }}
-                title="Remove">✕</button>
-            </div>
-          ))}
-        </div>
+      <div style={{fontWeight: 800, color: '#4a5568', marginBottom: 10}}>Active shares</div>
+      {!loading && shares.length === 0 && (
+        <div style={{padding: 20, background: '#f7fafc', borderRadius: 10, color: '#718096', marginBottom: 24}}>No users have active shares assigned to you.</div>
       )}
+      {shares.map((share) => (
+        <button
+          key={share.tokenId}
+          onClick={() => void openShare(share.tokenId, share.ownerDisplayName)}
+          style={{display: 'block', width: '100%', textAlign: 'left', padding: '14px 16px', marginBottom: 10, background: '#fff', borderRadius: 10, border: '1px solid #bee3f8', cursor: 'pointer'}}
+        >
+          <div style={{fontWeight: 800, fontSize: 16, color: '#1a365d'}}>{share.ownerDisplayName}</div>
+          <div style={{fontSize: 13, color: '#4a5568', marginTop: 5}}>Categories: {share.shareAllCategories ? 'All categories' : share.categories.join(', ')}</div>
+          <div style={{fontSize: 12, color: '#718096', marginTop: 3}}>Shared {new Date(share.createdAt).toLocaleDateString()} · Expires {new Date(share.expiresAt).toLocaleDateString()}</div>
+        </button>
+      ))}
 
-      {selectedToken && (
+      <div style={{marginTop: 28, borderTop: '1px solid #e2e8f0', paddingTop: 20}}>
+        <div style={{fontWeight: 800, color: '#4a5568', marginBottom: 8}}>Manual token lookup</div>
+        <form onSubmit={handleSubmit} style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+          <input
+            value={tokenInput}
+            onChange={(event) => setTokenInput(event.target.value)}
+            placeholder="Paste share token"
+            style={{flex: 1, minWidth: 220, padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 15}}
+          />
+          <button type="submit" disabled={loading || !tokenInput.trim()} style={{padding: '10px 22px', borderRadius: 8, background: '#3182ce', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer'}}>
+            Open share
+          </button>
+        </form>
+      </div>
+
+      {selectedShare && (
         <ExpertDataDialog
-          open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
-          tokenDoc={selectedToken}
-          expertName={user?.displayName || user?.email || ''}
-          clientName={clientName}
+          open
+          onClose={() => {
+            setSelectedShare(null);
+            void loadShares();
+          }}
+          tokenDoc={selectedShare}
+          expertName={user.displayName || user.email || ''}
+          clientName={selectedOwnerName}
         />
       )}
     </div>
